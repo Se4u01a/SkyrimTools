@@ -1,6 +1,7 @@
 """Names for Skyrim SE REL::IDs, from every source that uses them (CommonLibSSE-NG, and our own plugins).
 
-python build_id_names.py   ->  SkyrimTools\\data\\se_id_names.tsv  (id, name, where)
+python build_id_names.py [SRC_DIR ...]   ->  SkyrimTools\\data\\se_id_names.tsv  (id, name, where)
+Without SRC_DIR: the maintainer's source trees in ROOTS. The shipped table is already built; nobody else needs this.
 
 A use is RELOCATION_ID(se, ae) / REL::RelocationID(se, ae) (the SE id is the first) or REL::ID(n). Its name is the
 enclosing class plus the function or variable it sits in, guessed from the lines above; for RE/Offsets.h-style
@@ -59,8 +60,10 @@ def name_for(lines, k, use_line):
 
 
 def main():
+    roots = sys.argv[1:] or ROOTS
+    base = os.path.commonpath([os.path.dirname(os.path.abspath(r)) for r in roots])
     rows = {}
-    for root in ROOTS:
+    for root in roots:
         for dirpath, _, files in os.walk(root):
             if "third_party" in dirpath:
                 continue
@@ -75,7 +78,7 @@ def main():
                 for k, line in enumerate(lines):
                     for m in USE.finditer(line):
                         i = int(next(g for g in m.groups() if g))
-                        rel = os.path.relpath(path, r"D:\Games\Issen")
+                        rel = os.path.relpath(path, base)
                         name = name_for(lines, k, line)
                         rows.setdefault(i, []).append((name, "%s:%d" % (rel, k + 1)))
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

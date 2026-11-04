@@ -25,7 +25,7 @@ def main():
         del args[k:k + 2]
     vid, slot = int(args[0], 0), int(args[1], 0)
     count = int(args[2]) if len(args) > 2 else 40
-    _, pairs = addrlib.load(addrlib.DEFAULT_BIN)
+    _, pairs = addrlib.load(addrlib.default_bin())
     vt = dict(pairs)[vid]
     pe = pefile.PE(exe, fast_load=True)
     base = pe.OPTIONAL_HEADER.ImageBase

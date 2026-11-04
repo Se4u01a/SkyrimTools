@@ -2,17 +2,14 @@
   "mcpServers": {
     "housecarl": {
       "type": "stdio",
-      "command": "D:\\Games\\Issen\\houseCARL\\.claude\\worktrees\\relative-game-path\\src\\housecarl-mcp\\bin\\Release\\net10.0\\housecarl-mcp.exe",
-      "args": [],
-      "env": {
-        "HouseCarl__Mo2InstanceDir": "D:\\Games\\stb\\[STB] Mod Organizer",
-        "HOUSECARL_DATA_DIR": "D:\\Games\\Issen\\houseCARL-data"
-      }
+      "command": "cmd.exe",
+      "args": ["/c", "${CLAUDE_PLUGIN_ROOT}/scripts/run_housecarl.cmd"],
+      "env": {}
     },
     "pyghidra-mcp": {
       "type": "stdio",
       "command": "cmd.exe",
-      "args": ["/c", "D:\\Games\\SkyrimTools\\scripts\\re\\run_ghidra_mcp.cmd"],
+      "args": ["/c", "${CLAUDE_PLUGIN_ROOT}/scripts/re/run_ghidra_mcp.cmd"],
       "env": {}
     }
   }

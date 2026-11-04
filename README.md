@@ -1,7 +1,7 @@
 # SkyrimTools
 
-Claude Code plugin with everything gathered while modding Skyrim SE 1.5.97 on this machine (IssenFramework,
-ReactiveDodgeFramework, DismemberingFramework): MCP servers, skills, scripts and working practices.
+Claude Code plugin with everything gathered while modding Skyrim SE 1.5.97 (IssenFramework, ReactiveDodgeFramework,
+DismemberingFramework): MCP servers, skills, scripts and working practices. Installable on any Windows machine with `setup.cmd`.
 
 ## Contents
 
@@ -15,28 +15,39 @@ ReactiveDodgeFramework, DismemberingFramework): MCP servers, skills, scripts and
 | `scripts/esp/` | `espscan.py` (plugin records), `pexdis.py` (.pex disassembly) |
 | `scripts/misc/` | `merge_ini.py` (merge new ini keys into a deployed ini), `font_has.py` (font glyph check) |
 | `data/se_id_names.tsv` | REL::ID -> name table (`scripts/re/build_id_names.py`) |
-
-Not in the repo (referenced by absolute path):
-- RE workspace `D:\Games\Issen\re` (Ghidra 12.2, JDK 25, Python venv with pyghidra-mcp, Ghidra projects, binary
-  copies). Override with the `SKYRIM_RE_DIR` environment variable.
-- houseCARL server: `D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe`
-  (build: `dotnet build -c Release` in that worktree), data `D:\Games\Issen\houseCARL-data`, MO2 instance STB.
-- Skyrim-Animation-Studio (`D:\projects\Skyrim-Animation-Studio`): issen-clip, df-limb.
-- Project tools in their own repos (RDF `tools\`, IssenFramework `tools\`), listed in `skyrim-local-toolbox`.
+| `setup.cmd` / `setup.ps1` | installer: .NET 10, houseCARL release, optional Ghidra workspace, env vars, plugin registration |
+| `scripts/run_housecarl.cmd` | houseCARL launcher used by `.mcp.json` |
+| `requirements-re.txt` | Python packages of the RE venv |
 
 ## Install / update
 
-Registered in `C:\Users\Sequoia\.claude\settings.json` (all projects):
+**For anyone: see [INSTALL.md](INSTALL.md)** (in Russian). Short version: clone, close Claude Code, run `setup.cmd`,
+reopen Claude Code. No Docker: houseCARL is a Windows exe that reads the live MO2 instance, and Ghidra reads the game exe.
 
-```json
-"extraKnownMarketplaces": { "skyrim-tools": { "source": { "source": "directory", "path": "D:\\Games\\SkyrimTools" } } },
-"enabledPlugins": { "skyrim-tools@skyrim-tools": true }
-```
+`setup.ps1` puts the heavy parts outside the repo, in `%LOCALAPPDATA%\SkyrimTools` (`-InstallDir` to change):
+`housecarl\server` (release zip, SHA-256 checked; built from the tag's source with the relative-`gamePath` fix when
+the MO2 instance uses a relative `gamePath`, or with `-HousecarlFromSource`), `housecarl-data`, and with `-Ghidra` `re\` (JDK 25, Ghidra 12.2,
+venv from `requirements-re.txt` with the ghidrecomp `set_pdb` patch, `projects\`, `bins\skyrim\SkyrimSE.exe`). It writes
+user environment variables that the launchers, scripts and skills read, and registers the plugin in
+`~/.claude/settings.json`:
 
-or by hand in Claude Code: `/plugin marketplace add D:\Games\SkyrimTools`, then `/plugin install skyrim-tools@skyrim-tools`.
+| Variable | Used by |
+|---|---|
+| `SKYRIM_TOOLS_REPO` | skills (script paths) |
+| `SKYRIM_TOOLS_HOME` | launchers: default root for the next three |
+| `HOUSECARL_EXE`, `HOUSECARL_DATA_DIR` | `run_housecarl.cmd`; not written by setup, set them to use a houseCARL built from source |
+| `SKYRIM_MO2_DIR` | houseCARL's default instance, `addrlib.py` (Address Library .bin) |
+| `SKYRIM_GAME_DIR` | `addrlib.py` fallback, setup's SkyrimSE.exe copy |
+| `SKYRIM_RE_DIR` | `run_ghidra_mcp.cmd`, `skyrim_paths.py`, RE skill |
 
-Claude Code runs an installed plugin from its cache copy. After changing skills or `.mcp.json` here, run
-`/plugin marketplace update skyrim-tools` (or reinstall) and restart the session. Scripts are called by their absolute
-path in `D:\Games\SkyrimTools\scripts`, so script edits apply at once.
+`.mcp.json` starts both servers through `${CLAUDE_PLUGIN_ROOT}/scripts/...cmd`, so the plugin has no absolute paths.
+Claude Code runs an installed plugin from its cache copy: after changing skills or `.mcp.json` here, run
+`/plugin marketplace update skyrim-tools` and restart the session. Scripts are called through `%SKYRIM_TOOLS_REPO%`,
+so script edits apply at once.
+
+On the author's machine the variables point at the existing installs: `HOUSECARL_EXE` = the build from
+`D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath` fix, not in a release yet),
+`HOUSECARL_DATA_DIR` = `D:\Games\Issen\houseCARL-data`, `SKYRIM_RE_DIR` = `D:\Games\Issen\re`. Skyrim-Animation-Studio and
+the project tools (RDF, IssenFramework) stay in their own repos and are listed in `skyrim-local-toolbox`.
 
 Project-specific skills stay in their project (e.g. `issen-strike-series` in `D:\Games\Issen\.claude\skills`).

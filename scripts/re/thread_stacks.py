@@ -136,7 +136,7 @@ def main():
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import addrlib
         import bisect
-        _, pairs = addrlib.load(addrlib.DEFAULT_BIN)
+        _, pairs = addrlib.load(addrlib.default_bin())
         known = addrlib.names()
         by_off = sorted((o, i) for i, o in pairs)
         offs = [o for o, _ in by_off]

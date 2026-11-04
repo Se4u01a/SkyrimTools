@@ -1,0 +1,8 @@
+# Python packages of the RE workspace venv (setup.ps1 -Ghidra). Versions are the ones tested with Ghidra 12.2 + JDK 25.
+# ghidrecomp is pinned because setup.ps1 patches its utility.py (set_pdb bug); check the patch before bumping it.
+pyghidra-mcp==0.3.0
+pyghidra==3.2.0
+ghidrecomp==0.5.9
+mcp==2.3.0
+capstone==5.0.9
+pefile==2024.8.26

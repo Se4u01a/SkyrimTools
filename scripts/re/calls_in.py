@@ -25,7 +25,7 @@ def main():
         exe = args[k + 1]
         del args[k:k + 2]
     start, end = int(args[0], 16), int(args[1], 16)
-    _, pairs = addrlib.load(addrlib.DEFAULT_BIN)
+    _, pairs = addrlib.load(addrlib.default_bin())
     known = addrlib.names()
     by_off = sorted((o, i) for i, o in pairs)
     offs = [o for o, _ in by_off]

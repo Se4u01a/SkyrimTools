@@ -21,7 +21,7 @@ EXE = skyrim_paths.SKYRIM_EXE
 def main():
     voff = int(sys.argv[1], 0)
     depth = int(sys.argv[2])
-    _, pairs = addrlib.load(addrlib.DEFAULT_BIN)
+    _, pairs = addrlib.load(addrlib.default_bin())
     by_id = dict(pairs)
     starts = sorted(set(o for _, o in pairs))
     id_of = {o: i for i, o in pairs}

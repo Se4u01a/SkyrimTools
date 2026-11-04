@@ -11,14 +11,16 @@ description: >-
 
 # Skyrim reverse engineering (local)
 
-The scripts and the ID name table are in SkyrimTools (git, `D:\Games\SkyrimTools`); the heavy workspace stays in
-`D:\Games\Issen\re\` (env `SKYRIM_RE_DIR`; outside every git repo, nothing there is shipped):
+The scripts and the ID name table are in SkyrimTools (git, `%SKYRIM_TOOLS_REPO%`); the heavy workspace stays in
+`%SKYRIM_RE_DIR%` (built by `setup.cmd -Ghidra`; outside every git repo, nothing there is shipped). Unset
+`SKYRIM_RE_DIR` = the workspace is not installed: tell the user to run `setup.cmd -Ghidra`, don't guess a path.
+`re\` below means that folder:
 
 | Path | What |
 |---|---|
 | `re\ghidra_12.2_PUBLIC\` | Ghidra 12.2 (official NSA build, SHA-256 checked) |
 | `re\jdk-25.0.5+8\` | Temurin JDK 25 (Ghidra 12.2 needs Java 25) |
-| `re\venv\` | Python 3.13 venv: `pyghidra-mcp` 0.3.0, `pyghidra`, `capstone`-free; the MCP client SDK |
+| `re\venv\` | Python 3.10-3.13 venv from `requirements-re.txt`: `pyghidra-mcp` 0.3.0, `pyghidra`, the MCP client SDK, `capstone`, `pefile` |
 | `re\bins\skyrim\SkyrimSE.exe` | a copy of the 1.5.97 exe (the game folder's may change; analyse the copy) |
 | `re\bins\<mod>\` | copies of DLLs (+ their .pdb) taken for analysis |
 | `re\projects\` | Ghidra projects (`skyrim.gpr` = the main one) and pyghidra-mcp's cache |
@@ -28,12 +30,14 @@ The scripts and the ID name table are in SkyrimTools (git, `D:\Games\SkyrimTools
 
 ## Quick tools (no Ghidra needed, seconds)
 
-All are plain `python` (system Python has `capstone`, `pefile`); run from `D:\Games\SkyrimTools\scripts\re`.
+All are plain Python needing `capstone` / `pefile`: run them with `%SKYRIM_RE_DIR%\venv\Scripts\python` (or a system
+Python that has both), from `%SKYRIM_TOOLS_REPO%\scripts\re`; `python` below means that interpreter.
 
 - **Offset <-> ID**: `python addrlib.py off 6D4B6F SkyrimSE.exe+37B26A` -> `ID 40293 +0x7F ...` and the function's name
   when CommonLibSSE-NG / our plugins use that ID. `python addrlib.py id 37996` -> offset. Offsets are RVAs
-  (address - 0x140000000), the same numbers logs print after `SkyrimSE.exe+`. Reads the STB instance's
-  `version-1-5-97-0.bin` (SE format 1, parser follows CommonLibSSE-NG `IDDB::unpack_file`). An ID's "+0x7F" is the
+  (address - 0x140000000), the same numbers logs print after `SkyrimSE.exe+`. Reads the Address Library
+  `version-1-5-97-0.bin` from a mod in `%SKYRIM_MO2_DIR%\mods`, else the game's `Data` (`--bin` / `SKYRIM_ADDRLIB_BIN`
+  override) (SE format 1, parser follows CommonLibSSE-NG `IDDB::unpack_file`). An ID's "+0x7F" is the
   distance into the function that starts at that ID only if no unnamed function lies between: check in Ghidra.
 - **Live thread snapshot** (game running or hung): `python thread_stacks.py --busy --ids` (default process
   SkyrimSE.exe). Suspends each thread only while reading it. Take 2-3 snapshots: frames that repeat are where a thread
@@ -49,7 +53,7 @@ All are plain `python` (system Python has `capstone`, `pefile`); run from `D:\Ga
 - **Who makes virtual call `[reg+off]`**: byte-scan as in this skill's history, or `python find_vcall.py 0x568 4 ID:35565`
   (BFS over direct calls). vfunc index N -> offset N*8 (PlayerCharacter::Update 0xAD -> 0x568).
 - **A .swf's ActionScript 2 at a glance**: `python swf_as2.py file.swf [--names]` (loops, timers, constant pools).
-- **Decompile through a running HTTP server**: `D:\Games\Issen\re\venv\Scripts\python decomp.py [--xrefs] /Binary-hash 0xADDR Name::Func`
+- **Decompile through a running HTTP server**: `%SKYRIM_RE_DIR%\venv\Scripts\python decomp.py [--xrefs] /Binary-hash 0xADDR Name::Func`
   (resolves "Ambiguous match" itself). In Git Bash set `MSYS_NO_PATHCONV=1`, else `/Binary-hash` becomes a Windows path.
 - **Our own freeze log**: IssenFramework's watchdog (`[Dev] fFreezeLog`) writes `freeze: ... main thread ...` and
   `freeze: ... busy thread <id> (started at X) at ...; menus on the stack: <menu> (<swf>)` lines in
@@ -71,7 +75,7 @@ Flash menu or widget script); `C07FD0` = BSThread entry (job/task threads); `5AF
 
 ## Ghidra through MCP (pyghidra-mcp)
 
-Shipped by the SkyrimTools plugin (`D:\Games\SkyrimTools\.mcp.json`) as server `pyghidra-mcp`, stdio, via
+Shipped by the SkyrimTools plugin (`.mcp.json`) as server `pyghidra-mcp`, stdio, via
 `scripts\re\run_ghidra_mcp.cmd`; tool names contain `pyghidra-mcp` (deferred: load them with ToolSearch "pyghidra"). The JVM starts in ~20-60 s at session start.
 
 Tools: `list_project_binaries`, `list_project_binary_metadata`, `decompile_function(binary_name, name_or_address)`,
@@ -92,16 +96,16 @@ Tools: `list_project_binaries`, `list_project_binary_metadata`, `decompile_funct
 
 Without the MCP tools loaded (server failed, or a quick look): start it over HTTP and use the CLI client:
 ```
-cmd /c D:\Games\SkyrimTools\scripts\re\run_ghidra_mcp.cmd -t streamable-http -p 8765   (background; wait for "Uvicorn running")
-D:\Games\Issen\re\venv\Scripts\python D:\Games\SkyrimTools\scripts\re\mcp_call.py --url http://127.0.0.1:8765/mcp tools
-D:\Games\Issen\re\venv\Scripts\python D:\Games\SkyrimTools\scripts\re\mcp_call.py --url http://127.0.0.1:8765/mcp decompile_function "{\"binary_name\": \"/SkyrimSE.exe-5666e1\", \"name_or_address\": \"0x1406D4AF0\"}"
+cmd /c %SKYRIM_TOOLS_REPO%\scripts\re\run_ghidra_mcp.cmd -t streamable-http -p 8765   (background; wait for "Uvicorn running")
+%SKYRIM_RE_DIR%\venv\Scripts\python %SKYRIM_TOOLS_REPO%\scripts\re\mcp_call.py --url http://127.0.0.1:8765/mcp tools
+%SKYRIM_RE_DIR%\venv\Scripts\python %SKYRIM_TOOLS_REPO%\scripts\re\mcp_call.py --url http://127.0.0.1:8765/mcp decompile_function "{\"binary_name\": \"/SkyrimSE.exe-5666e1\", \"name_or_address\": \"0x1406D4AF0\"}"
 ```
 Only one process may hold a Ghidra project: stop the stdio server's twin (or use another `--project-name`) before
 starting a second one, else "is in use". A killed server leaves `projects\<name>.lock`; delete it when no
 pyghidra-mcp / python3.13 process is left.
 
 Local patch in the venv: `ghidrecomp\utility.py` `set_pdb` printed a variable before assigning it (crashed every
-`--sym-file-path` analysis). Re-apply after reinstalling `pyghidra-mcp`.
+`--sym-file-path` analysis). `setup.cmd -Ghidra` applies it; rerun setup after reinstalling `pyghidra-mcp`.
 
 ## Workflow: a freeze or crash
 

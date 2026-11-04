@@ -1,6 +1,6 @@
 """Decompile functions through a running pyghidra-mcp (HTTP); an ambiguous address resolves to its first named match.
 
-D:\\Games\\Issen\\re\\venv\\Scripts\\python D:\\Games\\SkyrimTools\\scripts\\re\\decomp.py [--url http://127.0.0.1:8765/mcp] [--xrefs] <binary_name> <name-or-0xaddr>...
+%SKYRIM_RE_DIR%\\venv\\Scripts\\python %SKYRIM_TOOLS_REPO%\\scripts\\re\\decomp.py [--url http://127.0.0.1:8765/mcp] [--xrefs] <binary_name> <name-or-0xaddr>...
 """
 import asyncio
 import json

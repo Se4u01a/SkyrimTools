@@ -4,7 +4,7 @@ python addrlib.py id 37996 36698            offsets of these IDs
 python addrlib.py off 6D4B6F 0x37B26A       the ID whose function holds each offset (nearest ID at or below it)
 python addrlib.py dump out.csv              every id,offset as CSV (sorted by offset)
 Names come from SkyrimTools\data\se_id_names.tsv (build_id_names.py), where a source we have uses the ID.
-Options: --bin <path>  (default: the 1.5.97 bin of the STB MO2 instance)
+Options: --bin <path>  (default: the 1.5.97 bin found by skyrim_paths: SKYRIM_ADDRLIB_BIN, the MO2 mods, the game Data)
 
 The format follows CommonLibSSE-NG src/REL/IDDB.cpp (unpack_file). An offset is an RVA: the address minus the image
 base 0x140000000, the same as "SkyrimSE.exe+XXXX" in logs and crash logs.
@@ -14,7 +14,12 @@ import os
 import struct
 import sys
 
-DEFAULT_BIN = r"D:\Games\stb\[STB] Mod Organizer\mods\Skyrim Script Extender 64 (SKSE64)\SKSE\Plugins\version-1-5-97-0.bin"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import skyrim_paths  # noqa: E402
+
+
+def default_bin():
+    return skyrim_paths.address_library_bin()
 
 
 def load(path):
@@ -87,7 +92,7 @@ def parse_num(s):
 
 def main():
     args = sys.argv[1:]
-    path = DEFAULT_BIN
+    path = None
     if "--bin" in args:
         k = args.index("--bin")
         path = args[k + 1]
@@ -95,7 +100,7 @@ def main():
     if not args:
         print(__doc__)
         return
-    version, pairs = load(path)
+    version, pairs = load(path or default_bin())
     known = names()
     mode, rest = args[0], args[1:]
     if mode == "id":

@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "skyrim-tools",
   "displayName": "SkyrimTools",
-  "version": "1.0.0",
-  "description": "Skyrim SE 1.5.97 modding toolkit for this machine: houseCARL (load order, records, Papyrus, Nexus) and pyghidra-mcp (Ghidra) MCP servers, authoring skills for SPID/KID/SkyPatcher/OAR/Papyrus/SKSE/Mutagen, reverse-engineering scripts, plugin/.pex readers and the working practices learned while building IssenFramework, RDF and DF.",
+  "version": "1.1.0",
+  "description": "Skyrim SE modding toolkit (install with setup.cmd): houseCARL (load order, records, Papyrus, Nexus) and pyghidra-mcp (Ghidra) MCP servers, authoring skills for SPID/KID/SkyPatcher/OAR/Papyrus/SKSE/Mutagen, reverse-engineering scripts, plugin/.pex readers and the working practices learned while building IssenFramework, RDF and DF.",
   "author": { "name": "Sequoia" },
   "keywords": ["skyrim", "skse", "modding", "mo2", "ghidra", "reverse-engineering"],
   "mcpServers": "./.mcp.json"

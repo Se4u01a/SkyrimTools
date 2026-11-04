@@ -11,21 +11,35 @@ description: >-
 
 # Local Skyrim toolbox
 
-SkyrimTools (`D:\Games\SkyrimTools`, git) is a Claude Code plugin: the skills, the two MCP servers and the small
-scripts below. Heavy installs stay where they were and are referenced by path. The plugin's `README.md` lists how it
-is installed and updated. Working rules learned along the way: skill `skyrim-modding-practices`.
+SkyrimTools (git) is a Claude Code plugin: the skills, the two MCP servers and the small scripts below. `setup.cmd`
+in its folder installs the heavy parts and writes user environment variables; every path below goes through them
+(cmd `%VAR%`, Git Bash `$VAR`, PowerShell `$env:VAR`). The plugin's `README.md` / `INSTALL.md` say how it is installed
+and updated. Working rules learned along the way: skill `skyrim-modding-practices`.
 
-## Instances
-- STB (the game being played): `D:\Games\stb\[STB] Mod Organizer` — `mods\`, `profiles\SBORKA\modlist.txt`
-  (`+` enabled, `-` disabled, top line = highest priority), `overwrite\`. Game `D:\Games\stb`, 1.5.97.
+## Paths (environment variables written by setup.ps1)
+| Variable | What |
+|---|---|
+| `SKYRIM_TOOLS_REPO` | the SkyrimTools repo (scripts, `data\`) |
+| `SKYRIM_TOOLS_HOME` | install root of the heavy parts, default `%LOCALAPPDATA%\SkyrimTools` (`housecarl\server`, `housecarl-data`, `re\`) |
+| `SKYRIM_MO2_DIR` | the MO2 instance, the folder with `ModOrganizer.ini` |
+| `SKYRIM_GAME_DIR` | the game folder (`SkyrimSE.exe`) |
+| `SKYRIM_RE_DIR` | RE workspace (Ghidra, JDK, venv), only when installed with `setup.cmd -Ghidra` |
+A variable that is unset means that part is not installed or was skipped: say so, and ask the user for the path
+rather than guessing. MO2 layout: `mods\`, `profiles\<profile>\modlist.txt` (`+` enabled, `-` disabled, top line =
+highest priority), `overwrite\`. SKSE logs: `%USERPROFILE%\Documents\My Games\Skyrim Special Edition\SKSE\`
+(`<Plugin>.log`, crash logs).
+
+## The author's machine (Sequoia)
+Everything from here on that names `D:\...` (instances, Skyrim-Animation-Studio, RDF / IssenFramework tools, the
+projects) exists only on the author's machine. On another machine check that the path exists before using it.
+- STB (the game being played): `D:\Games\stb\[STB] Mod Organizer`, profile `SBORKA`. Game `D:\Games\stb`, 1.5.97.
 - SDS: `D:\Games\stb\[SDS] - Mod organizer` — source of MCO/Orshdan clips, not played.
-- Logs: `C:\Users\Sequoia\Documents\My Games\Skyrim Special Edition\SKSE\` (`<Plugin>.log`, crash logs).
 
 ## MCP servers (SkyrimTools `.mcp.json`)
 | Server | What | Installed |
 |---|---|---|
-| `housecarl` | load order, records read/write, conflicts, Papyrus (de)compile, BSA, NIF, Nexus, SKSE layer | exe built from `D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (branch `claude/relative-game-path`, relative `gamePath=..\` fix, not merged); data `D:\Games\Issen\houseCARL-data`; instance = STB |
-| `pyghidra-mcp` | Ghidra decompile / disassemble / xrefs | `scripts\re\run_ghidra_mcp.cmd` + workspace `D:\Games\Issen\re` — see `skyrim-reverse-engineering` |
+| `housecarl` | load order, records read/write, conflicts, Papyrus (de)compile, BSA, NIF, Nexus, SKSE layer | `scripts\run_housecarl.cmd` -> `%HOUSECARL_EXE%`, else the release setup.ps1 put in `%SKYRIM_TOOLS_HOME%\housecarl\server`; settings in `%HOUSECARL_DATA_DIR%` (default `%SKYRIM_TOOLS_HOME%\housecarl-data`); instance = `%SKYRIM_MO2_DIR%` or the one saved with `housecarl_set_mo2_instance`. Author's machine: exe built from `D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath=..\` fix, not merged) |
+| `pyghidra-mcp` | Ghidra decompile / disassemble / xrefs | `scripts\re\run_ghidra_mcp.cmd` + workspace `%SKYRIM_RE_DIR%` — see `skyrim-reverse-engineering` |
 
 The authoring skills (`spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`,
 `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring`) come from houseCARL (commit a4dc3ebe) and call
@@ -36,14 +50,14 @@ say so when a step cannot be done exactly.
 | houseCARL tool | Here |
 |---|---|
 | `asset_status` (which mod wins a path) | search `mods\*\<path>` (Glob), order by `modlist.txt`; BSAs: check `mods\<mod>\*.bsa` |
-| `records` read / FormID lookup | `python D:\Games\SkyrimTools\scripts\esp\espscan.py plugin.esp text|ref|dump ...` (raw subrecords; `import espscan` gives `records()`, `subrecords()`, `edid()`) |
-| `decompile_script` | `python D:\Games\SkyrimTools\scripts\esp\pexdis.py file.pex` (disassembly) or the mod's `scripts\source\*.psc` |
+| `records` read / FormID lookup | `python %SKYRIM_TOOLS_REPO%\scripts\esp\espscan.py plugin.esp text|ref|dump ...` (raw subrecords; `import espscan` gives `records()`, `subrecords()`, `edid()`) |
+| `decompile_script` | `python %SKYRIM_TOOLS_REPO%\scripts\esp\pexdis.py file.pex` (disassembly) or the mod's `scripts\source\*.psc` |
 | `compile_script` | none outside houseCARL; check signatures with `papyrus-reference` |
 | `skse` layer | read `mods\*\SKSE\Plugins\*.ini|*.json` and the SKSE logs |
 | `nif_inspect` | Skyrim-Animation-Studio's crates read NIFs (`df-limb`); else ask the user to open NifSkope |
 | writes (`apply`, `create`, ...) | never hand-write plugins; use SPID/KID/SkyPatcher INIs in a new MO2 mod folder |
 
-## SkyrimTools scripts (`D:\Games\SkyrimTools\scripts`)
+## SkyrimTools scripts (`%SKYRIM_TOOLS_REPO%\scripts`)
 - `esp\espscan.py`, `esp\pexdis.py` — above.
 - `re\*.py` — addrlib, thread_stacks, pdbsym, disasm_at, vtable_slot, calls_in, find_vcall, swf_as2, decomp,
   mcp_call, build_id_names: see `skyrim-reverse-engineering`.
