@@ -1,0 +1,12 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "skyrim-tools",
+  "owner": { "name": "Sequoia" },
+  "plugins": [
+    {
+      "name": "skyrim-tools",
+      "source": "./",
+      "description": "Skyrim SE modding toolkit: MCP servers, skills, RE scripts and practices."
+    }
+  ]
+}
