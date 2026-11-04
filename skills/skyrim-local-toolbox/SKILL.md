@@ -63,6 +63,8 @@ say so when a step cannot be done exactly.
   mcp_call, build_id_names: see `skyrim-reverse-engineering`.
 - `misc\merge_ini.py DIST DEPLOYED` — add the keys of a shipped ini missing from the deployed one, every existing value
   and line kept (the user tunes values in game; see `skyrim-modding-practices`).
+- `misc\nexus_gql.py search|grep|mod|desc|files` — Nexus Mods lookups through the anonymous GraphQL API; see skill
+  `nexus-api-search` (use it before WebFetch on nexusmods.com).
 - `misc\font_has.py FONT [hex codepoints]` — does a TTF/OTF have the glyphs (default: Cyrillic) — for FLICK/SkyUI fonts.
 
 ## Animation tools

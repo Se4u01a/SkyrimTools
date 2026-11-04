@@ -13,10 +13,10 @@ DismemberingFramework): MCP servers, skills, scripts and working practices. Inst
 | `.claude-plugin/plugin.json` | plugin manifest (`skyrim-tools`) |
 | `.claude-plugin/marketplace.json` | local marketplace `skyrim-tools` with this one plugin |
 | `.mcp.json` | MCP servers: `housecarl` (load order, records, Papyrus, Nexus), `pyghidra-mcp` (Ghidra) |
-| `skills/` | `skyrim-local-toolbox` (catalog of all tools), `skyrim-modding-practices`, `skyrim-reverse-engineering`, and from houseCARL: `spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`, `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring` |
+| `skills/` | `skyrim-local-toolbox` (catalog of all tools), `nexus-api-search` (preferred Nexus lookups via GraphQL), `skyrim-modding-practices`, `skyrim-reverse-engineering`, and from houseCARL: `spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`, `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring` |
 | `scripts/re/` | Address Library, thread snapshots, .pdb symbols, disassembly, vtable slots, Ghidra MCP launcher and CLI client |
 | `scripts/esp/` | `espscan.py` (plugin records), `pexdis.py` (.pex disassembly) |
-| `scripts/misc/` | `merge_ini.py` (merge new ini keys into a deployed ini), `font_has.py` (font glyph check) |
+| `scripts/misc/` | `merge_ini.py` (merge new ini keys into a deployed ini), `font_has.py` (font glyph check), `nexus_gql.py` (Nexus search / description / files via the anonymous GraphQL API) |
 | `data/se_id_names.tsv` | REL::ID -> name table (`scripts/re/build_id_names.py`) |
 | `setup.cmd` / `setup.ps1` | installer: .NET 10, houseCARL release, optional Ghidra workspace, env vars, plugin registration |
 | `scripts/run_housecarl.cmd` | houseCARL launcher used by `.mcp.json` |
