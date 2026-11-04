@@ -3,10 +3,13 @@
 Claude Code plugin with everything gathered while modding Skyrim SE 1.5.97 (IssenFramework, ReactiveDodgeFramework,
 DismemberingFramework): MCP servers, skills, scripts and working practices. Installable on any Windows machine with `setup.cmd`.
 
+**По-русски:** что умеет набор — [FEATURES.md](FEATURES.md), как установить — [INSTALL.md](INSTALL.md).
+
 ## Contents
 
 | Path | What |
 |---|---|
+| `FEATURES.md`, `INSTALL.md` | what the toolkit does, how to install it (Russian, for users) |
 | `.claude-plugin/plugin.json` | plugin manifest (`skyrim-tools`) |
 | `.claude-plugin/marketplace.json` | local marketplace `skyrim-tools` with this one plugin |
 | `.mcp.json` | MCP servers: `housecarl` (load order, records, Papyrus, Nexus), `pyghidra-mcp` (Ghidra) |
