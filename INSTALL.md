@@ -1,7 +1,11 @@
 # Установка SkyrimTools
 
-Плагин для [Claude Code](https://claude.com/claude-code): скиллы (SPID, KID, SkyPatcher, OAR, Papyrus, SKSE,
-схемы записей Mutagen, реверс) и MCP-серверы:
+Набор для моддинга Skyrim SE: скиллы (SPID, KID, SkyPatcher, OAR, Papyrus, SKSE, схемы записей Mutagen, реверс) и
+MCP-серверы. С Claude Code он работает как плагин и регистрируется сам, но ничем к нему не привязан: скиллы, скрипты
+и серверы те же для любого агента (Codex, VS Code/Copilot, Cursor, Windsurf, Cline, Gemini CLI, opencode) — см.
+раздел «Другие агенты» ниже и [AGENTS.md](AGENTS.md).
+
+Два MCP-сервера:
 
 - **houseCARL** читает и пишет load order живого экземпляра MO2: записи плагинов, конфликты, патчи в новый ESP,
   (де)компиляция Papyrus, BSA, NIF, поиск на Nexus.
@@ -15,6 +19,8 @@ Docker не нужен: всё работает прямо в Windows, пото�
 
 - Windows 10 (1803+) или 11, x64.
 - [Claude Code](https://claude.com/claude-code): консольная версия или вкладка Code в приложении Claude Desktop.
+  Вместо него подойдёт любой другой агент — Codex, VS Code с Copilot, Cursor, Windsurf, Cline, Gemini CLI, opencode
+  (см. «Другие агенты» ниже).
 - Mod Organizer 2 со сборкой Skyrim SE / AE.
 - Остальное (.NET 10, Python, Java, Ghidra) установщик поставит сам, через winget и прямые загрузки.
 
@@ -48,6 +54,33 @@ setup.cmd -Yes                              без вопросов, всё по
 setup.cmd -Uninstall                        убрать плагин и переменные (папку установки — после вопроса)
 ```
 
+## Другие агенты (не Claude Code)
+
+Установка та же — `setup.cmd` (шаги 1–3 выше); пункт 4 заменяется на проверку ниже. Ничего из репозитория не
+привязано к Claude Code: скиллы — обычные папки с `SKILL.md`, серверы — обычные stdio-MCP, скрипты вызываются
+напрямую.
+
+- **С чего начать агенту:** [AGENTS.md](AGENTS.md) — карта репозитория, переменные окружения, оба MCP-сервера,
+  таблица скриптов, правила, которые нельзя нарушать. Его читают Codex и другие агенты, умеющие `AGENTS.md`; для
+  остальных в репозитории лежат короткие адаптеры, ссылающиеся на него: `CLAUDE.md`, `GEMINI.md`,
+  `.github/copilot-instructions.md`, `.cursor/rules/skyrim-tools.mdc`, `.windsurf/rules/skyrim-tools.md`,
+  `.clinerules/skyrim-tools.md`, `llms.txt`.
+- **Проверка установки:** `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1 -Fix` —
+  таблица «что есть, чего нет» (houseCARL, .NET 10, MO2, рабочая папка реверса, Python, скиллы) и команды починки.
+  `-Json` — то же машинным форматом.
+- **Скиллы:** [skills/README.md](skills/README.md) — какой скилл на какой вопрос отвечает и нужен ли ему houseCARL.
+  Агент читает `SKILL.md` целиком, а не по имени файла. В Claude Code скилл называется `housecarl:<имя>`, в остальных
+  хостах — просто имя папки. Ссылки на все скиллы в папке агента (например `~\.codex\skills`):
+  `scripts\agents\connect.ps1 -Client codex -LinkSkills`; для Claude Code `-Client claude`, для любой другой папки
+  `-SkillsTarget <путь>`.
+- **MCP-серверы:** [docs/mcp-clients.md](docs/mcp-clients.md) — готовые конфиги для Codex, VS Code/Copilot, Cursor,
+  Windsurf, Cline, Gemini CLI, opencode. Печатает блок с путями этой машины:
+  `scripts\agents\connect.ps1 -Client <codex|vscode|cursor|windsurf|cline|gemini|opencode|json>`.
+- **VS Code:** в репозитории уже есть `.vscode/mcp.json`, оба сервера подхватываются при открытии папки.
+
+Проверка в деле та же: «какой мод побеждает в записи Iron Sword?» — если сервер подключён, агент ответит по живой
+сборке, а не по догадке.
+
 ## Что и куда ставится
 
 | Что | Куда |
@@ -70,7 +103,8 @@ setup.cmd
 ```
 
 Затем в Claude Code: `/plugin marketplace update skyrim-tools` и перезапуск. Claude Code запускает плагин из своей
-копии, поэтому без этой команды новые скиллы не появятся.
+копии, поэтому без этой команды новые скиллы не появятся. Другим агентам ничего обновлять не нужно: они читают скиллы
+из этого репозитория (или из junction-ссылок `connect.ps1`) — достаточно перезапустить сессию.
 
 ## Если что-то не так
 
@@ -88,3 +122,11 @@ setup.cmd
 - **Игра AE (1.6.x).** Всё, кроме RE-скилла, работает. RE-скрипты (`addrlib.py` и соседи) рассчитаны на SE 1.5.97.
 - **Скиллы ссылаются на `D:\Games\Issen\...`.** Это проекты автора (IssenFramework, RDF). У тебя их нет, а Claude
   предупреждён, что эти разделы описывают чужую машину.
+- **Другой агент не видит MCP-серверы.** Сначала запусти лаунчер руками: `scripts\run_housecarl.cmd` (или
+  `scripts\re\run_ghidra_mcp.cmd`) — он печатает, чего не хватает. Потом сверь пути с выводом
+  `scripts\agents\doctor.ps1 -Fix` и посмотри конфиг своего клиента в [docs/mcp-clients.md](docs/mcp-clients.md).
+- **Агент не читает `AGENTS.md`.** Так бывает у клиентов с фиксированным именем файла инструкций: у Claude Code это
+  `CLAUDE.md`, у Gemini CLI — `GEMINI.md`, у Copilot — `.github/copilot-instructions.md`, у Cursor — `.cursor/rules/`,
+  у Windsurf — `.windsurf/rules/`, у Cline — `.clinerules/`. Все они уже в репозитории и ссылаются на `AGENTS.md`;
+  если твой агент живёт в другом проекте, скопируй туда короткий блок из начала `AGENTS.md` или укажи путь к
+  `<папка SkyrimTools>\AGENTS.md`.

@@ -1,7 +1,12 @@
 # SkyrimTools
 
-Claude Code plugin with everything gathered while modding Skyrim SE 1.5.97 (IssenFramework, ReactiveDodgeFramework,
-DismemberingFramework): MCP servers, skills, scripts and working practices. Installable on any Windows machine with `setup.cmd`.
+Everything gathered while modding Skyrim SE 1.5.97 (IssenFramework, ReactiveDodgeFramework, DismemberingFramework):
+MCP servers, skills, scripts and working practices. Installable on any Windows machine with `setup.cmd`.
+
+It works with **any** coding agent — Claude Code, Codex, VS Code/Copilot, Cursor, Windsurf, Cline, Gemini CLI,
+opencode. Claude Code is just the packaging it ships first: open **[AGENTS.md](AGENTS.md)** for the agent-facing guide
+(repo map, environment variables, MCP wiring, script reference, the rules that matter), and
+[docs/mcp-clients.md](docs/mcp-clients.md) for connecting the two MCP servers to a client that is not Claude Code.
 
 **По-русски:** что умеет набор — [FEATURES.md](FEATURES.md), как установить — [INSTALL.md](INSTALL.md).
 
@@ -9,6 +14,11 @@ DismemberingFramework): MCP servers, skills, scripts and working practices. Inst
 
 | Path | What |
 |---|---|
+| `AGENTS.md` | agent guide — the single source of truth for any agent; `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules`, `.windsurf/rules`, `.clinerules`, `llms.txt` are thin adapters to it |
+| `docs/mcp-clients.md` | MCP server config for Claude Code, Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode |
+| `skills/README.md` | index of the 11 skills — what each answers, and whether it needs houseCARL |
+| `scripts/agents/` | `doctor.ps1` (is this machine installed and usable?), `connect.ps1` (MCP config + skill junctions for any agent) |
+| `CONTRIBUTING.md` | house rules for changing the repo (EOLs, no absolute paths, adding skills/scripts) |
 | `FEATURES.md`, `INSTALL.md` | what the toolkit does, how to install it (Russian, for users) |
 | `.claude-plugin/plugin.json` | plugin manifest (`skyrim-tools`) |
 | `.claude-plugin/marketplace.json` | local marketplace `skyrim-tools` with this one plugin |
@@ -47,6 +57,23 @@ user environment variables that the launchers, scripts and skills read, and regi
 Claude Code runs an installed plugin from its cache copy: after changing skills or `.mcp.json` here, run
 `/plugin marketplace update skyrim-tools` and restart the session. Scripts are called through `%SKYRIM_TOOLS_REPO%`,
 so script edits apply at once.
+
+## Any other agent
+
+The plugin is the Claude Code path; everything below is host-neutral. Details in [AGENTS.md](AGENTS.md).
+
+| Step | Command |
+|---|---|
+| is the machine installed and usable? | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1 -Fix` |
+| install / repair | `setup.cmd -Yes -Mo2Dir "<folder with ModOrganizer.ini>"` — the same `setup.ps1`, no agent needed |
+| find the right knowledge | [skills/README.md](skills/README.md) (index of all 11 skills), then read the whole `SKILL.md` |
+| connect the MCP servers | [docs/mcp-clients.md](docs/mcp-clients.md), or `scripts\agents\connect.ps1 -Client <codex\|vscode\|cursor\|windsurf\|cline\|gemini\|opencode\|json>` prints the block for this machine |
+| reuse the skills | `scripts\agents\connect.ps1 -Client codex -LinkSkills` junctions every skill into `~\.codex\skills` (`-Client claude` for `~\.claude\skills`, `-SkillsTarget <dir>` for anything else) |
+
+Repos that read a fixed instruction file get one: `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`,
+`.cursor/rules/skyrim-tools.mdc`, `.windsurf/rules/skyrim-tools.md`, `.clinerules/skyrim-tools.md`, `llms.txt` — each is a
+short adapter, and `AGENTS.md` stays the source of truth. VS Code users opening this repo get both MCP servers from
+`.vscode/mcp.json` without configuring anything.
 
 On the author's machine the variables point at the existing installs: `HOUSECARL_EXE` = the build from
 `D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath` fix, not in a release yet),

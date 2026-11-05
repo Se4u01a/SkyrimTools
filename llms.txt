@@ -1,0 +1,36 @@
+# SkyrimTools
+
+> Windows-only Skyrim SE (1.5.97) modding toolkit for coding agents: 11 Agent Skills, two MCP servers (live MO2 load order via houseCARL, headless Ghidra), and Python scripts for plugins, Papyrus, Address Library and crash analysis.
+
+Start here: AGENTS.md is the complete agent guide. INSTALL.md (Russian) is the human install guide; FEATURES.md (Russian)
+lists what the toolkit does.
+
+## Docs
+
+- [AGENTS.md](AGENTS.md): repository map, environment variables, MCP servers, script reference, non-negotiable rules.
+- [skills/README.md](skills/README.md): index of all 11 skills — what each answers, whether it needs the MCP server.
+- [docs/mcp-clients.md](docs/mcp-clients.md): MCP server config for Claude Code, Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode.
+- [README.md](README.md): overview, contents table, install/update summary.
+- [CONTRIBUTING.md](CONTRIBUTING.md): house rules for changing the repo (EOLs, no absolute paths, adding skills/scripts).
+- [setup.ps1](setup.ps1): installer/upgrader — environment variables, houseCARL release (SHA-256 checked), optional Ghidra workspace.
+
+## Skills
+
+- [skills/skyrim-modding-practices/SKILL.md](skills/skyrim-modding-practices/SKILL.md): working rules — read before any mod work.
+- [skills/skyrim-local-toolbox/SKILL.md](skills/skyrim-local-toolbox/SKILL.md): which tool does the job, and fallbacks without houseCARL.
+- [skills/spid-authoring/SKILL.md](skills/spid-authoring/SKILL.md): SPID 7.3 `_DISTR.ini` distribution.
+- [skills/kid-authoring/SKILL.md](skills/kid-authoring/SKILL.md): KID 3.5 `_KID.ini` keywords.
+- [skills/skypatcher-authoring/SKILL.md](skills/skypatcher-authoring/SKILL.md): SkyPatcher 6.4.1 record patches.
+- [skills/open-animation-replacer/SKILL.md](skills/open-animation-replacer/SKILL.md): OAR 3.x config.json conditions and priorities.
+- [skills/papyrus-reference/SKILL.md](skills/papyrus-reference/SKILL.md): offline Papyrus/SKSE signature corpus.
+- [skills/mutagen-reference/SKILL.md](skills/mutagen-reference/SKILL.md): offline record schema (fields, types, enums).
+- [skills/skse-plugin-authoring/SKILL.md](skills/skse-plugin-authoring/SKILL.md): native SKSE DLLs with CommonLibSSE-NG.
+- [skills/skyrim-reverse-engineering/SKILL.md](skills/skyrim-reverse-engineering/SKILL.md): crash logs, offsets, thread snapshots, Ghidra.
+- [skills/nexus-api-search/SKILL.md](skills/nexus-api-search/SKILL.md): Nexus Mods through the anonymous GraphQL API.
+
+## Optional
+
+- [llms.txt](llms.txt): this file.
+- [.vscode/mcp.json](.vscode/mcp.json): ready MCP servers for VS Code / Copilot in this workspace.
+- [requirements-re.txt](requirements-re.txt): pinned Python packages of the RE venv.
+- [data/se_id_names.tsv](data/se_id_names.tsv): REL::ID → name table used by the RE scripts.

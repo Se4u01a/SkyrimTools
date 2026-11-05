@@ -1,0 +1,34 @@
+---
+description: SkyrimTools repository guide — Windows-only Skyrim SE modding toolkit (11 agent skills, houseCARL + Ghidra MCP servers, Python RE/ESP scripts). Apply when working in this repo or when a task touches Skyrim plugins, MO2 load orders, Papyrus, SPID/KID/SkyPatcher/OAR INIs, SKSE plugins or crash analysis.
+alwaysApply: true
+---
+
+# SkyrimTools
+
+The authoritative, complete guide is [`AGENTS.md`](../../AGENTS.md). Read it before changing anything here; this file is
+the reminder, not the reference.
+
+## Orient
+
+- Nothing to build, no tests. Markdown knowledge in `skills/`, Python/PowerShell scripts in `scripts/`, two MCP
+  launchers, an installer (`setup.cmd` / `setup.ps1`).
+- Windows-only, Skyrim SE 1.5.97-first. Heavy parts (`houseCARL`, Ghidra, JDK, venv) live outside the repo in
+  `%LOCALAPPDATA%\SkyrimTools`, reached through `SKYRIM_TOOLS_REPO`, `SKYRIM_TOOLS_HOME`, `SKYRIM_MO2_DIR`,
+  `SKYRIM_GAME_DIR`, `SKYRIM_RE_DIR`. An unset variable means "not installed" — say so instead of guessing a path.
+- Check the machine: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1` (`-Json`, `-Fix`).
+- Skills: `skills/<name>/SKILL.md` + `references/` (index: `skills/README.md`). Read the whole `SKILL.md` and the
+  reference it names; corpora `index.jsonl` are grepped for the quoted token to get shard + line.
+- MCP: `housecarl` (live load order, records, Papyrus, BSA/NIF, Nexus) and `pyghidra-mcp` (headless Ghidra). Tool names
+  are `housecarl_<tool>`. This workspace has `.vscode/mcp.json` for VS Code; other clients: `docs/mcp-clients.md`.
+
+## Non-negotiables
+
+1. New MO2 mod folder for every patch/INI/OAR submod; never write into another author's mod folder; say that it does
+   nothing until the user enables it.
+2. Merge INIs with `scripts\misc\merge_ini.py`; never overwrite a deployed INI the user tuned in game.
+3. No edits to `ModOrganizer.ini` while MO2 runs, and no hand-editing `plugins.txt` / `modlist.txt`.
+4. No game assets, mod files or binaries in git.
+5. Never launch the game. Finish with "built, NOT tested in game" plus the steps the user must take.
+6. Verify addresses/REL::IDs/vtables (`scripts\re\addrlib.py`, Ghidra) before using or quoting them.
+7. `.cmd`/`.ps1` are CRLF, everything else LF; keep encodings (FLICK translations: UTF-16LE BOM).
+8. Update `AGENTS.md`, `README.md` and `skills/README.md` whenever you add a script or a skill.

@@ -11,10 +11,12 @@ description: >-
 
 # Local Skyrim toolbox
 
-SkyrimTools (git) is a Claude Code plugin: the skills, the two MCP servers and the small scripts below. `setup.cmd`
-in its folder installs the heavy parts and writes user environment variables; every path below goes through them
-(cmd `%VAR%`, Git Bash `$VAR`, PowerShell `$env:VAR`). The plugin's `README.md` / `INSTALL.md` say how it is installed
-and updated. Working rules learned along the way: skill `skyrim-modding-practices`.
+SkyrimTools (git) is a modding toolkit for coding agents: a Claude Code plugin, and without any change the same skills,
+two MCP servers and small scripts for every other agent (`AGENTS.md` in the repo root is the guide; `skills/README.md`
+lists the skills). `setup.cmd` in its folder installs the heavy parts and writes user environment variables; every path
+below goes through them (cmd `%VAR%`, Git Bash `$VAR`, PowerShell `$env:VAR`). The repo's `README.md` / `INSTALL.md` say
+how it is installed and updated, `scripts\agents\doctor.ps1 -Fix` says what is missing on this machine. Working rules
+learned along the way: skill `skyrim-modding-practices`.
 
 ## Paths (environment variables written by setup.ps1)
 | Variable | What |

@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "housecarl": {
+      "type": "stdio",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\scripts\\run_housecarl.cmd"]
+    },
+    "pyghidra-mcp": {
+      "type": "stdio",
+      "command": "cmd.exe",
+      "args": ["/c", "${workspaceFolder}\\scripts\\re\\run_ghidra_mcp.cmd"]
+    }
+  }
+}

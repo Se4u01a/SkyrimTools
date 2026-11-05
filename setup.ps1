@@ -643,6 +643,9 @@ if ($WantGhidra) {
     Say "      `"импортируй $ReDir\bins\skyrim\SkyrimSE.exe в Ghidra`" и дождись конца анализа."
 }
 Say '   Обновление: git pull, снова setup.cmd, затем в Claude Code /plugin marketplace update skyrim-tools.'
+Say '   Другой агент (Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode) — начни с AGENTS.md в папке'
+Say '   репозитория; проверка установки: scripts\agents\doctor.ps1 -Fix; конфиг MCP:'
+Say '   scripts\agents\connect.ps1 -Client <codex|vscode|cursor|windsurf|cline|gemini|opencode|json>'
 if ($script:Warnings.Count) {
     Write-Host ''
     Write-Host 'Предупреждения:' -ForegroundColor Yellow
