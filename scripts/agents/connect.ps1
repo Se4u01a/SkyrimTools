@@ -38,7 +38,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [ValidateSet('claude', 'codex', 'vscode', 'cursor', 'windsurf', 'cline', 'gemini', 'opencode', 'json')]
+    [ValidateSet('claude', 'codex', 'vscode', 'cursor', 'windsurf', 'cline', 'gemini', 'opencode', 'dsh', 'json')]
     [string]$Client = 'json',
     [switch]$Portable,
     [switch]$LinkSkills,
@@ -68,6 +68,7 @@ $configPaths = @{
     cline    = 'MCP Servers -> Configure MCP Servers (writes cline_mcp_settings.json), or edit that file'
     gemini   = "$env:USERPROFILE\.gemini\settings.json"
     opencode = 'opencode.json (project) or ~\.config\opencode\opencode.json'
+    dsh      = "skills: $env:USERPROFILE\.dsh\skills  (link with -Client dsh -LinkSkills); MCP: Zed forwards its own context_servers over ACP, the desktop app has its own MCP settings"
     json     = 'any client: mcpServers shape, adapt the keys'
 }
 
@@ -98,11 +99,12 @@ if ($LinkSkills) {
         $target = switch ($Client) {
             'claude' { Join-Path $env:USERPROFILE '.claude\skills' }
             'codex' { Join-Path $env:USERPROFILE '.codex\skills' }
+            'dsh' { Join-Path $env:USERPROFILE '.dsh\skills' }
             default { '' }
         }
     }
     if (-not $target) {
-        Write-Host "  -LinkSkills needs -SkillsTarget for '$Client': only claude (~\.claude\skills) and codex (~\.codex\skills) have a known skills folder here." -ForegroundColor Red
+        Write-Host "  -LinkSkills needs -SkillsTarget for '$Client': only claude (~\.claude\skills), codex (~\.codex\skills) and dsh (~\.dsh\skills) have a known skills folder here." -ForegroundColor Red
         exit 1
     }
     if (-not (Test-Path -LiteralPath $target)) {
@@ -211,6 +213,16 @@ startup_timeout_sec = 300
         Write-Host ''
         Write-Host '  Normally nothing to paste: setup.cmd registered the plugin. By hand:' -ForegroundColor DarkGray
         Write-Host ('  claude mcp add --transport stdio housecarl -- cmd.exe /c "' + $housecarl + '"')
+    }
+    'dsh' {
+        Write-Host ''
+        Write-Host '  DeepSeek Harness has no mcpServers file to paste:'
+        Write-Host '  - desktop app: MCP servers are configured in its own settings;'
+        Write-Host '  - Zed External Agent: Zed may forward its own context_servers to the agent over ACP.'
+        Write-Host ''
+        Write-Host '  Skills are the part this script wires:  -Client dsh -LinkSkills  ->  ' -NoNewline -ForegroundColor DarkGray
+        Write-Host "$env:USERPROFILE\.dsh\skills"
+        Write-Host '  DSH discovers <root>\<name>\SKILL.md one level deep, so one junction per skill.' -ForegroundColor DarkGray
     }
 }
 

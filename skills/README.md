@@ -41,6 +41,8 @@ Skills are plain folders, so an agent either reads them from this repo or gets a
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\connect.ps1 -Client codex -LinkSkills
 # Claude Code's user-level skills directory
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\connect.ps1 -Client claude -LinkSkills
+# DeepSeek Harness: the same root its desktop app, CLI and ACP profile in Zed read
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\connect.ps1 -Client dsh -LinkSkills
 # anywhere else
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\connect.ps1 -Client codex -LinkSkills -SkillsTarget D:\tools\my-agent\skills
 ```
@@ -48,3 +50,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\connect.ps1 -
 Junctions mean an edit here is live in the other agent; `-Force` replaces an existing link, and a real directory is
 never overwritten. If the target agent does not read skill folders at all, point its instruction file at this directory
 and at [`AGENTS.md`](../AGENTS.md).
+
+### DeepSeek Harness specifics
+
+DSH's `dsh-skill-filesystem` provider scans, in rank order: `<projectRoot>/.dsh/skills`, `<projectRoot>/.agents/skills`,
+`customSkillDirs`, `%USERPROFILE%\.dsh\skills`, `%USERPROFILE%\.agents\skills`. Its rules differ from Claude Code in
+four ways worth knowing:
+
+- discovery is **one level deep** — `<root>/<name>/SKILL.md` or `<root>/<name>.md`; a nested `**/SKILL.md` is ignored;
+- `SKILL.md` frontmatter needs `name` (kebab-case, same as the folder) and `description`, the same two fields these
+  skills already carry; `compatibility`, `license` and other extra keys are tolerated;
+- optional `whenToUse`, `disable-model-invocation` and `user-invocable` control whether the skill reaches the model
+  catalog and the human command surface; a malformed boolean drops the whole skill with a warning;
+- the provider watches the roots, so a new junction appears in the session catalog without restarting DSH.
+
+DSH also reads workspace instructions: user-global `%USERPROFILE%\.dsh\AGENTS.md` (then `%USERPROFILE%\.agents\AGENTS.md`),
+then the `AGENTS.md`/`CLAUDE.md` chain from the project root down to the working directory. `%USERPROFILE%\.dsh\skills`
+is therefore the exact analogue of `%USERPROFILE%\.claude\skills`.

@@ -119,8 +119,11 @@ houseCARL.
 
 Other agents can point at this repo's skills instead of copying them:
 `scripts\agents\connect.ps1 -Client codex -LinkSkills` creates one directory junction per skill in the agent's skills
-folder (default `~\.codex\skills`, `-Client claude` for `~\.claude\skills`, or `-SkillsTarget <dir>`). Without
-junctions, tell the agent in its own instructions where `skills/` lives.
+folder — `-Client codex` for `~\.codex\skills`, `-Client claude` for `~\.claude\skills`, `-Client dsh` for
+`~\.dsh\skills` (DeepSeek Harness: desktop app, CLI and the ACP profile Zed spawns all read it), or
+`-SkillsTarget <dir>`. DeepSeek Harness also scans `<project>\.dsh\skills`, `<project>\.agents\skills` and
+`~\.agents\skills`, one level deep (`<root>\<name>\SKILL.md`), and reads user-global instructions from
+`~\.dsh\AGENTS.md`. Without junctions, tell the agent in its own instructions where `skills/` lives.
 
 ## 5. Scripts
 

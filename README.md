@@ -68,7 +68,7 @@ The plugin is the Claude Code path; everything below is host-neutral. Details in
 | install / repair | `setup.cmd -Yes -Mo2Dir "<folder with ModOrganizer.ini>"` — the same `setup.ps1`, no agent needed |
 | find the right knowledge | [skills/README.md](skills/README.md) (index of all 11 skills), then read the whole `SKILL.md` |
 | connect the MCP servers | [docs/mcp-clients.md](docs/mcp-clients.md), or `scripts\agents\connect.ps1 -Client <codex\|vscode\|cursor\|windsurf\|cline\|gemini\|opencode\|json>` prints the block for this machine |
-| reuse the skills | `scripts\agents\connect.ps1 -Client codex -LinkSkills` junctions every skill into `~\.codex\skills` (`-Client claude` for `~\.claude\skills`, `-SkillsTarget <dir>` for anything else) |
+| reuse the skills | `scripts\agents\connect.ps1 -Client codex -LinkSkills` junctions every skill into `~\.codex\skills` (`-Client claude` for `~\.claude\skills`, `-Client dsh` for `~\.dsh\skills`, `-SkillsTarget <dir>` for anything else) |
 
 Repos that read a fixed instruction file get one: `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`,
 `.cursor/rules/skyrim-tools.mdc`, `.windsurf/rules/skyrim-tools.md`, `.clinerules/skyrim-tools.md`, `llms.txt` — each is a
