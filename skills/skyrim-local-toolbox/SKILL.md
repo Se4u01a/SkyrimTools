@@ -36,6 +36,10 @@ Everything from here on that names `D:\...` (instances, Skyrim-Animation-Studio,
 projects) exists only on the author's machine. On another machine check that the path exists before using it.
 - STB (the game being played): `D:\Games\stb\[STB] Mod Organizer`, profile `SBORKA`. Game `D:\Games\stb`, 1.5.97.
 - SDS: `D:\Games\stb\[SDS] - Mod organizer` — source of MCO/Orshdan clips, not played.
+- RE2CE TEST: `D:\Games\stb\[RE2CE TEST] Mod Organizer`, profile `RE2CE` — clean animation test bed (same game
+  folder, vanilla masters only): SKSE (+ Address Library bins), Open Animation Replacer (IED addon removed; animation
+  log ON, written to the SKSE OAR log), SKSE Menu Framework, and the mod under test. Local saves/INIs. Test clips here,
+  not in STB, so other OAR/DAR mods cannot win the frames. Copy a rebuilt mod over its folder in `mods\`.
 
 ## MCP servers (SkyrimTools `.mcp.json`)
 | Server | What | Installed |
