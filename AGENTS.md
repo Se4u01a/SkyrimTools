@@ -75,7 +75,7 @@ Two stdio servers, both launched by `.cmd` wrappers that read the variables abov
 | Server | Launcher | Ready when | Gives you |
 |---|---|---|---|
 | `housecarl` | `scripts\run_housecarl.cmd` | `%HOUSECARL_EXE%` exists (needs .NET Runtime 10 x64) | the live MO2 load order: record reads/writes, conflicts, patches, Papyrus (de)compile, BSA, NIF, SKSE layer, Nexus |
-| `pyghidra-mcp` | `scripts\re\run_ghidra_mcp.cmd` | `%SKYRIM_RE_DIR%\venv`, `jdk-*`, `ghidra_*_PUBLIC` exist | headless Ghidra: decompile, disassemble, xrefs |
+| `pyghidra-mcp` | `scripts\re\run_ghidra_mcp.cmd` | `%SKYRIM_RE_DIR%\venv`, `jdk-*`, `ghidra_*_PUBLIC` exist | headless Ghidra: decompile, disassemble, xrefs (auto-attaches CommonLibSSE GDT archives) |
 
 houseCARL tool names are `housecarl_<tool>` on every host — `housecarl_records`, `housecarl_asset_status`,
 `housecarl_apply`, `housecarl_create`, `housecarl_forward`, `housecarl_check`, `housecarl_compile_script`,
@@ -138,6 +138,7 @@ running `pyghidra-mcp` on streamable HTTP.
 | `scripts\misc\merge_ini.py DIST DEPLOYED` | add new keys of a shipped INI to the deployed one, keeping every tuned value and line |
 | `scripts\misc\font_has.py FONT [codepoints]` | does a TTF/OTF map the glyphs (default: Cyrillic) |
 | `scripts\misc\nexus_gql.py search\|grep\|mod\|desc\|files\|raw ...` | Nexus Mods through the public GraphQL API |
+| `scripts\run_sage_havok.cmd` | launch SageHavokEditor GUI (`tools\SageHavokEditor\SageHavokEditor.exe`) |
 | `scripts\re\addrlib.py id\|off\|dump ...` | REL::ID ↔ RVA of `SkyrimSE.exe` (needs the Address Library `.bin`) |
 | `scripts\re\build_id_names.py [SRC_DIR...]` | rebuild `data/se_id_names.tsv` (maintainer only) |
 | `scripts\re\thread_stacks.py [pid] --busy --ids` | snapshot every thread of the running/hung game |
@@ -152,6 +153,20 @@ running `pyghidra-mcp` on streamable HTTP.
 
 `scripts\run_housecarl.cmd` and `scripts\re\run_ghidra_mcp.cmd` are the MCP launchers; the second also accepts extra
 arguments (`-t streamable-http -p 8765`) so the Ghidra tools can be driven from a shell without an MCP client.
+
+## 5.1 Optional third-party tools (not installed by `setup.ps1`)
+
+Used when present; `doctor.ps1` reports them, nothing breaks without them. Put them in place by hand.
+
+| Tool | Where it is looked for | Used by |
+|---|---|---|
+| [Skyrim RE Toolkit](https://github.com/ByteBard97/skyrim-re-toolkit) GDT archives | `%SKYRIM_RE_DIR%\gdt\CommonLibSSE_SE_b93280e.gdt` | `run_ghidra_mcp.cmd` passes it as `--gdt`, so decompiled code shows CommonLibSSE types (`Actor`, `TESObjectREFR`) |
+| [BethesdaGhidraScripts](https://github.com/doodlum/BethesdaGhidraScripts) | `%SKYRIM_RE_DIR%\BethesdaGhidraScripts\` | by hand: imports CommonLib/Address Library symbols, vtables and signatures into a Ghidra project |
+| [SageHavokEditor](https://github.com/TheSageLenny/Sage-Havok-Editor) | `%SKYRIM_TOOLS_REPO%\tools\SageHavokEditor\SageHavokEditor.exe` (gitignored) | `scripts\run_sage_havok.cmd`: behavior graph (`.hkx`) editor GUI |
+
+The heavy parts may also sit in the repo root instead of `%SKYRIM_TOOLS_HOME%`: `re\`, `houseCARL\`, `houseCARL-data\`
+and `tools\` are gitignored, and the launchers fall back to `re\` and a `houseCARL\` build there when the variables point
+at a folder that no longer exists.
 
 ## 6. Rules that outrank your defaults
 

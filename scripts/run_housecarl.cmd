@@ -9,7 +9,18 @@ if not defined SKYRIM_TOOLS_HOME set "SKYRIM_TOOLS_HOME=%LOCALAPPDATA%\SkyrimToo
 if not defined HOUSECARL_EXE set "HOUSECARL_EXE=%SKYRIM_TOOLS_HOME%\housecarl\server\housecarl-mcp.exe"
 if not defined HOUSECARL_DATA_DIR set "HOUSECARL_DATA_DIR=%SKYRIM_TOOLS_HOME%\housecarl-data"
 if defined SKYRIM_MO2_DIR set "HouseCarl__Mo2InstanceDir=%SKYRIM_MO2_DIR%"
+rem Fallback when HOUSECARL_EXE is stale: a houseCARL checkout or release in the repo root's houseCARL\ (gitignored).
+for %%I in ("%~dp0..\houseCARL") do set "REPO_HC=%%~fI"
+if not exist "%HOUSECARL_EXE%" if exist "%REPO_HC%\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe" (
+    set "HOUSECARL_EXE=%REPO_HC%\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe"
+)
+if not exist "%HOUSECARL_EXE%" if exist "%REPO_HC%\server\housecarl-mcp.exe" (
+    set "HOUSECARL_EXE=%REPO_HC%\server\housecarl-mcp.exe"
+)
 if not exist "%HOUSECARL_EXE%" goto missing
+if not exist "%HOUSECARL_DATA_DIR%" if exist "%LOCALAPPDATA%\SkyrimTools\housecarl-data" (
+    set "HOUSECARL_DATA_DIR=%LOCALAPPDATA%\SkyrimTools\housecarl-data"
+)
 if not exist "%HOUSECARL_DATA_DIR%" mkdir "%HOUSECARL_DATA_DIR%"
 "%HOUSECARL_EXE%" %*
 exit /b %errorlevel%

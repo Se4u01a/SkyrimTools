@@ -4,9 +4,9 @@ description: >-
   Catalog of every Skyrim modding tool on this machine and where it lives: the SkyrimTools plugin's MCP servers
   (houseCARL, pyghidra-mcp) and scripts (espscan, pexdis, addrlib, thread_stacks, merge_ini, font_has), the
   project tools in RDF / IssenFramework (hkxcheck, Pandora staging, clip sets, DF packs), Skyrim-Animation-Studio's
-  issen-clip / df-limb, and the MO2 instances. Load when you need a tool for a Skyrim task and do not know which one,
-  when a housecarl_* tool is not loaded and a local substitute is needed, or when you need to find which mod provides a
-  file, read an .esp record or a .pex, or locate the MO2 instances.
+  issen-clip / df-limb, SageHavokEditor, Skyrim RE Toolkit, BethesdaGhidraScripts, and the MO2 instances. Load when you
+  need a tool for a Skyrim task and do not know which one, when a housecarl_* tool is not loaded and a local substitute
+  is needed, or when you need to find which mod provides a file, read an .esp record or a .pex, or locate the MO2 instances.
 ---
 
 # Local Skyrim toolbox
@@ -21,11 +21,11 @@ learned along the way: skill `skyrim-modding-practices`.
 ## Paths (environment variables written by setup.ps1)
 | Variable | What |
 |---|---|
-| `SKYRIM_TOOLS_REPO` | the SkyrimTools repo (scripts, `data\`) |
+| `SKYRIM_TOOLS_REPO` | the SkyrimTools repo (scripts, `data\`, and on this machine `houseCARL\`, `re\`, `tools\`) |
 | `SKYRIM_TOOLS_HOME` | install root of the heavy parts, default `%LOCALAPPDATA%\SkyrimTools` (`housecarl\server`, `housecarl-data`, `re\`) |
 | `SKYRIM_MO2_DIR` | the MO2 instance, the folder with `ModOrganizer.ini` |
 | `SKYRIM_GAME_DIR` | the game folder (`SkyrimSE.exe`) |
-| `SKYRIM_RE_DIR` | RE workspace (Ghidra, JDK, venv), only when installed with `setup.cmd -Ghidra` |
+| `SKYRIM_RE_DIR` | RE workspace (Ghidra, JDK, venv), on this machine in repo root `%SKYRIM_TOOLS_REPO%\re` (`setup.cmd -Ghidra` on clean installs) |
 A variable that is unset means that part is not installed or was skipped: say so, and ask the user for the path
 rather than guessing. MO2 layout: `mods\`, `profiles\<profile>\modlist.txt` (`+` enabled, `-` disabled, top line =
 highest priority), `overwrite\`. SKSE logs: `%USERPROFILE%\Documents\My Games\Skyrim Special Edition\SKSE\`
@@ -44,8 +44,8 @@ projects) exists only on the author's machine. On another machine check that the
 ## MCP servers (SkyrimTools `.mcp.json`)
 | Server | What | Installed |
 |---|---|---|
-| `housecarl` | load order, records read/write, conflicts, Papyrus (de)compile, BSA, NIF, Nexus, SKSE layer | `scripts\run_housecarl.cmd` -> `%HOUSECARL_EXE%`, else the release setup.ps1 put in `%SKYRIM_TOOLS_HOME%\housecarl\server`; settings in `%HOUSECARL_DATA_DIR%` (default `%SKYRIM_TOOLS_HOME%\housecarl-data`); instance = `%SKYRIM_MO2_DIR%` or the one saved with `housecarl_set_mo2_instance`. Author's machine: exe built from `D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath=..\` fix, not merged) |
-| `pyghidra-mcp` | Ghidra decompile / disassemble / xrefs | `scripts\re\run_ghidra_mcp.cmd` + workspace `%SKYRIM_RE_DIR%` — see `skyrim-reverse-engineering` |
+| `housecarl` | load order, records read/write, conflicts, Papyrus (de)compile, BSA, NIF, Nexus, SKSE layer | `scripts\run_housecarl.cmd` -> `%HOUSECARL_EXE%`, else repo build in `houseCARL\` or release in `%SKYRIM_TOOLS_HOME%\housecarl\server`; settings in `%HOUSECARL_DATA_DIR%` (default `%SKYRIM_TOOLS_HOME%\housecarl-data`); instance = `%SKYRIM_MO2_DIR%` or the one saved with `housecarl_set_mo2_instance`. Author's machine: exe built from `%SKYRIM_TOOLS_REPO%\houseCARL\.claude\worktrees\relative-game-path\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe` (relative `gamePath=..\` fix, not merged) |
+| `pyghidra-mcp` | Ghidra decompile / disassemble / xrefs | `scripts\re\run_ghidra_mcp.cmd` + workspace `%SKYRIM_RE_DIR%` (`%SKYRIM_TOOLS_REPO%\re`, contains Ghidra 12.2 in `ghidra_12.2_PUBLIC` + CommonLibSSE GDT type archives) — see `skyrim-reverse-engineering` |
 
 The authoring skills (`spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`,
 `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring`) come from houseCARL (commit a4dc3ebe) and call
@@ -61,7 +61,7 @@ say so when a step cannot be done exactly.
 | `compile_script` | none outside houseCARL; check signatures with `papyrus-reference` |
 | `skse` layer | read `mods\*\SKSE\Plugins\*.ini|*.json` and the SKSE logs |
 | `nif_inspect` | Skyrim-Animation-Studio's crates read NIFs (`df-limb`); else ask the user to open NifSkope |
-| writes (`apply`, `create`, ...) | never hand-write plugins; use SPID/KID/SkyPatcher INIs in a new MO2 mod folder |
+| `writes` (`apply`, `create`, ...) | never hand-write plugins; use SPID/KID/SkyPatcher INIs in a new MO2 mod folder |
 
 ## SkyrimTools scripts (`%SKYRIM_TOOLS_REPO%\scripts`)
 - `esp\espscan.py`, `esp\pexdis.py` — above.
@@ -72,6 +72,7 @@ say so when a step cannot be done exactly.
 - `misc\nexus_gql.py search|grep|mod|desc|files` — Nexus Mods lookups through the anonymous GraphQL API; see skill
   `nexus-api-search` (use it before WebFetch on nexusmods.com).
 - `misc\font_has.py FONT [hex codepoints]` — does a TTF/OTF have the glyphs (default: Cyrillic) — for FLICK/SkyUI fonts.
+- `run_sage_havok.cmd` — launcher for `SageHavokEditor` GUI.
 
 ## Animation tools
 - Skyrim-Animation-Studio, `D:\projects\Skyrim-Animation-Studio` (Rust, branch `issen-sequence`,
@@ -86,6 +87,9 @@ say so when a step cannot be done exactly.
   `PIE.$Name` annotations to `@CAST|form|plugin...`. Only annotations named after a graph event reach plugins (PIE is one).
 
 ## Behavior graphs (ReactiveDodgeFramework `tools\`, `D:\Games\Issen\ReactiveDodgeFramework`)
+- `SageHavokEditor` (`scripts\run_sage_havok.cmd` -> `%SKYRIM_TOOLS_REPO%\tools\SageHavokEditor\SageHavokEditor.exe`,
+  upstream [TheSageLenny/Sage-Havok-Editor](https://github.com/TheSageLenny/Sage-Havok-Editor)) — visual editor and
+  graph inspector for Skyrim Havok behavior trees (`.hkx`), state machines, animation annotations, and Pandora/Nemesis patches.
 - `hkxcheck.py FILE.xml [--summary NAME|#ID] [--list-sm]` — stdlib checker/inspector of behavior XML (serde-hkx `hkxc`
   or `hkxcmd` output).
 - `stage_pandora.py` — runs Pandora outside MO2 into `_work/` (never into the real output mod); `pandora_log.py` —
@@ -95,11 +99,25 @@ say so when a step cannot be done exactly.
 - `clip_analyze.py`, `annotate_clips.py`, `build_clip_set.py` — clip root-motion analysis, annotation writing, OAR clip
   sets; `gen_menu_translations.py` — FLICK translations (UTF-16LE BOM, CRLF); `build_fomod.py` — FOMOD archive.
 
+## Reverse engineering toolkits (optional, placed by hand; `setup.ps1` does not install them)
+- **Skyrim RE Toolkit** ([ByteBard97/skyrim-re-toolkit](https://github.com/ByteBard97/skyrim-re-toolkit)):
+  - Precompiled Data Type Archives (`.gdt`) in `%SKYRIM_RE_DIR%\gdt\` (`CommonLibSSE_SE_b93280e.gdt`, AE, VR).
+    `run_ghidra_mcp.cmd` automatically passes `--gdt` to `pyghidra-mcp` so decompiled code resolves raw pointers into
+    typed engine structs (`TESObjectREFR`, `Actor`, etc.).
+  - Sources and runtime inspection harness in `%SKYRIM_RE_DIR%\skyrim-re-toolkit\`.
+- **BethesdaGhidraScripts** ([doodlum/BethesdaGhidraScripts](https://github.com/doodlum/BethesdaGhidraScripts),
+  `%SKYRIM_RE_DIR%\BethesdaGhidraScripts\`):
+  - Automates Clang-based generation of Ghidra import scripts from CommonLib headers and Address Library.
+  - Automatically imports vtables, function signatures, and symbols into Ghidra projects across SE and AE binaries.
+- **Ghidra 12.2** (`%SKYRIM_RE_DIR%\ghidra_12.2_PUBLIC\`, official NSA build):
+  - Driven headless over MCP by `pyghidra-mcp` (`scripts\re\run_ghidra_mcp.cmd`).
+
 ## IssenFramework `tools\`
 `import_strike_clips.py` (strike sets -> OAR submods), `render_strike_previews.py` (FLICK preview sheets),
 `build_df_pack.py` + `df_packs\` (DF packs for creatures without one).
 
 ## Projects (D:\Games\Issen)
 IssenFramework (own plugin, git), ReactiveDodgeFramework, SkyrimSE_DismemberingFramework, CommonLibSSE-NG (shared by
-xmake builds as `../CommonLibSSE-NG`), houseCARL (MCP server source), `re\` (RE workspace), `_scratch\` for throwaway
-files, `_downloads\` for archives (untrusted), `_backups\`.
+xmake builds as `../CommonLibSSE-NG`), `_scratch\` for throwaway files, `_downloads\` for archives (untrusted), `_backups\`.
+On the author's machine `houseCARL\` (MCP server source) and `re\` (RE workspace) live in the SkyrimTools repo root
+(`%SKYRIM_TOOLS_REPO%\houseCARL`, `%SKYRIM_TOOLS_REPO%\re`, both gitignored), no longer under `D:\Games\Issen`.

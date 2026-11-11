@@ -27,6 +27,7 @@ opencode. Claude Code is just the packaging it ships first: open **[AGENTS.md](A
 | `scripts/re/` | Address Library, thread snapshots, .pdb symbols, disassembly, vtable slots, Ghidra MCP launcher and CLI client |
 | `scripts/esp/` | `espscan.py` (plugin records), `pexdis.py` (.pex disassembly) |
 | `scripts/misc/` | `merge_ini.py` (merge new ini keys into a deployed ini), `font_has.py` (font glyph check), `nexus_gql.py` (Nexus search / description / files via the anonymous GraphQL API) |
+| `scripts/run_sage_havok.cmd` | launcher for `SageHavokEditor` GUI |
 | `data/se_id_names.tsv` | REL::ID -> name table (`scripts/re/build_id_names.py`) |
 | `setup.cmd` / `setup.ps1` | installer: .NET 10, houseCARL release, optional Ghidra workspace, env vars, plugin registration |
 | `scripts/run_housecarl.cmd` | houseCARL launcher used by `.mcp.json` |
@@ -76,8 +77,8 @@ short adapter, and `AGENTS.md` stays the source of truth. VS Code users opening 
 `.vscode/mcp.json` without configuring anything.
 
 On the author's machine the variables point at the existing installs: `HOUSECARL_EXE` = the build from
-`D:\Games\Issen\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath` fix, not in a release yet),
-`HOUSECARL_DATA_DIR` = `D:\Games\Issen\houseCARL-data`, `SKYRIM_RE_DIR` = `D:\Games\Issen\re`. Skyrim-Animation-Studio and
-the project tools (RDF, IssenFramework) stay in their own repos and are listed in `skyrim-local-toolbox`.
+`D:\Games\SkyrimTools\houseCARL\.claude\worktrees\relative-game-path` (relative `gamePath` fix, not in a release yet),
+`HOUSECARL_DATA_DIR` = `%LOCALAPPDATA%\SkyrimTools\housecarl-data`, `SKYRIM_RE_DIR` = `D:\Games\SkyrimTools\re` (Ghidra 12.2).
+Skyrim-Animation-Studio and the project tools (RDF, IssenFramework) stay in their own repos and are listed in `skyrim-local-toolbox`.
 
 Project-specific skills stay in their project (e.g. `issen-strike-series` in `D:\Games\Issen\.claude\skills`).

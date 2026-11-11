@@ -12,19 +12,23 @@ description: >-
 # Skyrim reverse engineering (local)
 
 The scripts and the ID name table are in SkyrimTools (git, `%SKYRIM_TOOLS_REPO%`); the heavy workspace stays in
-`%SKYRIM_RE_DIR%` (built by `setup.cmd -Ghidra`; outside every git repo, nothing there is shipped). Unset
+`%SKYRIM_RE_DIR%` (built by `setup.cmd -Ghidra` outside the repo; on the author's machine it is the gitignored
+`%SKYRIM_TOOLS_REPO%\re`, which the launchers also use as a fallback; nothing there is shipped). Unset
 `SKYRIM_RE_DIR` = the workspace is not installed: tell the user to run `setup.cmd -Ghidra`, don't guess a path.
-`re\` below means that folder:
+`re\` below means that folder (Ghidra 12.2 lives in `re\ghidra_12.2_PUBLIC\`):
 
 | Path | What |
 |---|---|
 | `re\ghidra_12.2_PUBLIC\` | Ghidra 12.2 (official NSA build, SHA-256 checked) |
 | `re\jdk-25.0.5+8\` | Temurin JDK 25 (Ghidra 12.2 needs Java 25) |
 | `re\venv\` | Python 3.10-3.13 venv from `requirements-re.txt`: `pyghidra-mcp` 0.3.0, `pyghidra`, the MCP client SDK, `capstone`, `pefile` |
+| `re\gdt\` | optional, put there by hand (not by setup): Data Type Archives from **Skyrim RE Toolkit** (`CommonLibSSE_SE_b93280e.gdt`, AE, VR; auto-passed via `--gdt` when present) |
+| `re\BethesdaGhidraScripts\` | **BethesdaGhidraScripts** by doodlum (pipeline to generate import scripts from CommonLib / Address Library) |
+| `re\skyrim-re-toolkit\` | **Skyrim RE Toolkit** framework repository (type generator, symbol archive, runtime inspection harnesses) |
 | `re\bins\skyrim\SkyrimSE.exe` | a copy of the 1.5.97 exe (the game folder's may change; analyse the copy) |
 | `re\bins\<mod>\` | copies of DLLs (+ their .pdb) taken for analysis |
 | `re\projects\` | Ghidra projects (`skyrim.gpr` = the main one) and pyghidra-mcp's cache |
-| `SkyrimTools\scripts\re\run_ghidra_mcp.cmd` | starts pyghidra-mcp with that JDK / Ghidra, project `projects\skyrim.gpr` |
+| `SkyrimTools\scripts\re\run_ghidra_mcp.cmd` | starts pyghidra-mcp with that JDK / Ghidra, project `projects\skyrim.gpr`, and `--gdt` |
 | `SkyrimTools\scripts\re\` | the scripts below (`skyrim_paths.py` = where the workspace is) |
 | `SkyrimTools\data\se_id_names.tsv` | REL::ID -> name, from every source we have (`build_id_names.py`) |
 
@@ -78,6 +82,10 @@ Flash menu or widget script); `C07FD0` = BSThread entry (job/task threads); `5AF
 Shipped by the SkyrimTools plugin (`.mcp.json`) as server `pyghidra-mcp`, stdio, via
 `scripts\re\run_ghidra_mcp.cmd`; tool names contain `pyghidra-mcp` (deferred: load them with ToolSearch "pyghidra"). The JVM starts in ~20-60 s at session start.
 
+`scripts\re\run_ghidra_mcp.cmd` automatically attaches the **Skyrim RE Toolkit** GDT archive
+(`re\gdt\CommonLibSSE_SE_b93280e.gdt`) via `--gdt`, making CommonLibSSE structures (`Actor`, `TESObjectREFR`, etc.)
+immediately accessible in Ghidra's Data Type Manager.
+
 Tools: `list_project_binaries`, `list_project_binary_metadata`, `decompile_function(binary_name, name_or_address)`,
 `disassemble(binary_name, address, count)`, `list_xrefs`, `search_symbols_by_name`, `search_strings`, `search_code`,
 `read_bytes`, `list_imports`/`list_exports`, `gen_callgraph`, `import_binary(binary_path)`, `rename_function`,
@@ -89,6 +97,8 @@ Tools: `list_project_binaries`, `list_project_binary_metadata`, `decompile_funct
   in `list_project_binary_metadata` (usually `0x180000000`).
 - A newly imported binary is analysed in the background; tools answer "Analysis incomplete" until done.
   SkyrimSE.exe takes long the first time (tens of minutes); it is analysed once into `projects\skyrim.gpr` and kept.
+- To populate symbols, vtables and signatures for a clean binary: use **BethesdaGhidraScripts** (`re\BethesdaGhidraScripts\run.py`
+  or `run_headless.py`) which parses CommonLib with Clang and applies Address Library symbols automatically.
 - To analyse another mod's DLL: copy it (and its .pdb) into `re\bins\<mod>\`, then `import_binary` with that path.
   The `.pdb` next to the DLL is picked up by Ghidra's PDB analyzer when its GUID matches.
 - Rename functions you identify (`rename_function`, e.g. to the CommonLibSSE name + `_ID40293`) and `save`, so the next
@@ -123,4 +133,4 @@ Local patch in the venv: `ghidrecomp\utility.py` `set_pdb` printed a variable be
    that the offset is inside the function. For a vtable, `read_bytes` the vtable slot.
 3. Write the verified facts in the code comment (address, ID, what was checked), as RDF / IssenFramework already do.
 
-Related: `skse-plugin-authoring` (writing the hook), `skyrim-local-toolbox` (MO2 instance, plugins, records).
+Related: `skse-plugin-authoring` (writing the hook), `skyrim-local-toolbox` (MO2 instance, plugins, records, SageHavokEditor).

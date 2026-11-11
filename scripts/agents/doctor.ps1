@@ -100,9 +100,23 @@ if (Test-Path -LiteralPath $home_) {
 }
 
 $hcExe = Get-SkyrimVar 'HOUSECARL_EXE'
-if (-not $hcExe) { $hcExe = Join-Path $home_ 'housecarl\server\housecarl-mcp.exe' }
+if (-not $hcExe -or -not (Test-Path -LiteralPath $hcExe)) {
+    $candidates = @(
+        (Join-Path $Repo 'houseCARL\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe'),
+        (Join-Path $Repo 'houseCARL\server\housecarl-mcp.exe'),
+        (Join-Path $home_ 'housecarl\server\housecarl-mcp.exe')
+    )
+    foreach ($cand in $candidates) {
+        if (Test-Path -LiteralPath $cand) { $hcExe = $cand; break }
+    }
+    if (-not $hcExe) { $hcExe = Join-Path $home_ 'housecarl\server\housecarl-mcp.exe' }
+}
 $hcData = Get-SkyrimVar 'HOUSECARL_DATA_DIR'
-if (-not $hcData) { $hcData = Join-Path $home_ 'housecarl-data' }
+if (-not $hcData -or -not (Test-Path -LiteralPath $hcData)) {
+    $fallbackData = Join-Path $home_ 'housecarl-data'
+    if (Test-Path -LiteralPath $fallbackData) { $hcData = $fallbackData }
+    elseif (-not $hcData) { $hcData = $fallbackData }
+}
 if (Test-Path -LiteralPath $hcExe) {
     Add-Result 'housecarl' 'OK' "$hcExe ($([math]::Round((Get-Item -LiteralPath $hcExe).Length / 1MB, 1)) MB)"
     Add-Result 'housecarl data' 'OK' $hcData
@@ -177,7 +191,11 @@ if (-not $game) {
 
 # ---------------------------------------------------------------- RE workspace (optional)
 $re = Get-SkyrimVar 'SKYRIM_RE_DIR'
-if (-not $re) { $re = Join-Path $home_ 're' }
+if (-not $re -or -not (Test-Path -LiteralPath $re)) {
+    $repoRe = Join-Path $Repo 're'
+    if (Test-Path -LiteralPath $repoRe) { $re = $repoRe }
+    elseif (-not $re) { $re = Join-Path $home_ 're' }
+}
 if (-not (Test-Path -LiteralPath $re)) {
     Add-Result 'RE workspace' 'SKIP' "$re (not installed)" 'Only for reverse engineering: setup.cmd -Ghidra'
 } else {
@@ -188,9 +206,19 @@ if (-not (Test-Path -LiteralPath $re)) {
     if ((Test-Path -LiteralPath $venv) -and $jdk -gt 0 -and $ghidra -gt 0) {
         Add-Result 'RE workspace' 'OK' "$re (venv, JDK, Ghidra)"
         if (Test-Path -LiteralPath $exe) { Add-Result 'SkyrimSE.exe copy' 'OK' $exe } else { Add-Result 'SkyrimSE.exe copy' 'WARN' "missing: $exe" 'setup.cmd -Ghidra copies it for analysis.' }
+        $gdt = Join-Path $re 'gdt\CommonLibSSE_SE_b93280e.gdt'
+        if (Test-Path -LiteralPath $gdt) { Add-Result 'Skyrim RE Toolkit (GDT)' 'OK' $gdt }
+        $bgs = Join-Path $re 'BethesdaGhidraScripts\run.py'
+        if (Test-Path -LiteralPath $bgs) { Add-Result 'BethesdaGhidraScripts' 'OK' (Split-Path -Parent $bgs) }
     } else {
         Add-Result 'RE workspace' 'WARN' "incomplete in $re (venv=$([bool](Test-Path -LiteralPath $venv)), jdk=$jdk, ghidra=$ghidra)" 'setup.cmd -Ghidra'
     }
+}
+
+# ---------------------------------------------------------------- Havok and Behavior tools
+$sage = Join-Path $Repo 'tools\SageHavokEditor\SageHavokEditor.exe'
+if (Test-Path -LiteralPath $sage) {
+    Add-Result 'SageHavokEditor' 'OK' $sage
 }
 
 # ---------------------------------------------------------------- python
@@ -207,7 +235,7 @@ if ($python) {
 }
 
 # ---------------------------------------------------------------- MCP launchers, skills, data
-foreach ($launcher in @('scripts\run_housecarl.cmd', 'scripts\re\run_ghidra_mcp.cmd')) {
+foreach ($launcher in @('scripts\run_housecarl.cmd', 'scripts\re\run_ghidra_mcp.cmd', 'scripts\run_sage_havok.cmd')) {
     $path = Join-Path $Repo $launcher
     if (Test-Path -LiteralPath $path) { Add-Result $launcher 'OK' $path } else { Add-Result $launcher 'FAIL' "missing: $path" 'git pull (the launchers are part of the repo).' }
 }
