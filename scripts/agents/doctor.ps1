@@ -224,6 +224,20 @@ $papyrusExe = $papyrusCandidates | Where-Object { $_ -and (Test-Path -LiteralPat
 if ($papyrusExe) { Add-Result 'Papyrus compiler' 'OK' $papyrusExe }
 else { Add-Result 'Papyrus compiler' 'WARN' 'none (open-source papyrus-compiler or the Creation Kit PapyrusCompiler.exe)' 'setup.cmd installs papyrus-compiler; scripts\papyrus\papyrusc.py which' }
 
+# ---------------------------------------------------------------- SkyLink AI (optional, live game bridge)
+$skylinkExe = if ($env:SKYLINK_EXE) { $env:SKYLINK_EXE } else { Join-Path $home_ 'skylink\server\SkyrimMCP.exe' }
+if (Test-Path -LiteralPath $skylinkExe) {
+    $skylinkMod = $null
+    if ($mo2 -and (Test-Path -LiteralPath (Join-Path $mo2 'mods'))) {
+        $skylinkMod = Get-ChildItem -LiteralPath (Join-Path $mo2 'mods') -Directory -ErrorAction SilentlyContinue |
+                      Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKSE\Plugins\SkyrimMCPPlugin.dll') } | Select-Object -First 1
+    }
+    if ($skylinkMod) { Add-Result 'SkyLink AI' 'OK' "server $skylinkExe; SKSE plugin in mod '$($skylinkMod.Name)' (enable it in MO2)" }
+    else { Add-Result 'SkyLink AI' 'WARN' "server $skylinkExe, but no MO2 mod carries SKSE\Plugins\SkyrimMCPPlugin.dll" 'setup.cmd -SkyLink creates the mod "SkyLink AI"; then enable it in MO2.' }
+} else {
+    Add-Result 'SkyLink AI' 'SKIP' 'not installed (optional: live game bridge)' 'setup.cmd -SkyLink'
+}
+
 # ---------------------------------------------------------------- Havok and Behavior tools
 $sage = Join-Path $Repo 'tools\SageHavokEditor\SageHavokEditor.exe'
 if (Test-Path -LiteralPath $sage) {

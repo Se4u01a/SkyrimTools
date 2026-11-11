@@ -4,8 +4,8 @@ Authoritative agent guide: [`AGENTS.md`](../AGENTS.md). Read it before changing 
 
 ## What this repo is
 
-A Windows-only Skyrim SE modding toolkit for coding agents: 12 skills (`skills/<name>/SKILL.md` + `references/`), two MCP
-server launchers (`housecarl`, `pyghidra-mcp`), Python/PowerShell scripts (`scripts/`), an installer (`setup.cmd`) and a
+A Windows-only Skyrim SE modding toolkit for coding agents: 15 skills (`skills/<name>/SKILL.md` + `references/`), three MCP
+server launchers (`housecarl`, `pyghidra-mcp`, optional `skylink`), Python/PowerShell scripts (`scripts/`), an installer (`setup.cmd`) and a
 REL::ID name table (`data/`). Nothing to build; tests: `python scripts\agents\selftest.py`.
 
 - Heavy parts (`houseCARL`, Ghidra, JDK, venv) live outside the repo in `%LOCALAPPDATA%\SkyrimTools`; environment

@@ -8,6 +8,8 @@
       2. houseCARL — MCP-сервер для load order / записей / Papyrus / Nexus. Скачивается релиз с GitHub
          (SHA-256 сверяется), в папку установки кладётся только сервер (скиллы уже есть в этом репо).
       2b. Компилятор Papyrus (.psc -> .pex) с открытым кодом, ~1 МБ, SHA-256 сверяется; -NoPapyrus — не ставить.
+      2c. По желанию (-SkyLink): SkyLink AI — MCP-мост к запущенной игре. Сервер кладётся в папку установки,
+          SKSE-плагин — в НОВУЮ папку мода MO2 "SkyLink AI" (включить её в MO2 нужно самому).
       3. По желанию (-Ghidra): рабочая папка для реверса — JDK 25, Ghidra 12.2, Python venv с pyghidra-mcp,
          копия SkyrimSE.exe для анализа. Около 2 ГБ на диске.
       4. Пользовательские переменные окружения SKYRIM_* (их читают лаунчеры, скрипты и скиллы).
@@ -34,6 +36,10 @@
 .PARAMETER NoPapyrus
     Не ставить компилятор Papyrus (scripts\papyrus\papyrusc.py тогда ищет PapyrusCompiler.exe из Creation Kit).
 
+.PARAMETER SkyLink
+    Поставить SkyLink AI (github.com/jarvann/SkryimMCM, MIT): чтение и изменение состояния ЗАПУЩЕННОЙ игры через
+    SKSE-плагин и именованный канал. Без этого ключа не ставится и не спрашивается.
+
 .PARAMETER Yes
     Не задавать вопросов: брать значения по умолчанию и не ждать подтверждения.
 
@@ -59,6 +65,7 @@ param(
     [switch]$Yes,
     [switch]$FilesOnly,
     [switch]$NoPapyrus,
+    [switch]$SkyLink,
     [switch]$Uninstall
 )
 
@@ -83,7 +90,13 @@ $Pins = @{
     PapyrusTag = '2026.03.15'
     PapyrusUrl = 'https://github.com/russo-2025/papyrus-compiler/releases/download/2026.03.15/papyrus-compiler-windows.zip'
     PapyrusSha = '67b44c77d00a5cda986bec6af5c228a56abe6ec1fadcb4cfea5c858e6941140e'
+    # SkyLink AI (MIT), github.com/jarvann/SkryimMCM; SHA-256 из digest релиза.
+    SkyLinkTag = 'v1.0.0'
+    SkyLinkUrl = 'https://github.com/jarvann/SkryimMCM/releases/download/v1.0.0/SkyLinkAI-v1.0.0.zip'
+    SkyLinkSha = '161b5d7019b8835f1ee8ff5e44856bc9b43575c3dee475b5b44e88ba8f150057'
 }
+$SkyLinkModName = 'SkyLink AI'
+$SkyLinkMarker = 'SkyrimTools-installed.txt'
 
 # ---------------------------------------------------------------- вывод и вопросы
 
@@ -183,6 +196,17 @@ function Test-Mo2Relative([string]$Mo2) {
         if ($v -and -not [IO.Path]::IsPathRooted($v)) { return $true }
     }
     $false
+}
+
+# Папка модов экземпляра: mod_directory из ModOrganizer.ini (может содержать %BASE_DIR%), иначе <base>\mods.
+function Get-Mo2ModsDir([string]$Mo2) {
+    $base = Read-Mo2Value $Mo2 'base_directory'
+    if (-not $base) { $base = $Mo2 }
+    elseif (-not [IO.Path]::IsPathRooted($base)) { $base = Join-Path $Mo2 $base }
+    $mods = Read-Mo2Value $Mo2 'mod_directory'
+    if ($mods) { $mods = $mods.Replace('%BASE_DIR%', $base) } else { $mods = Join-Path $base 'mods' }
+    if (-not [IO.Path]::IsPathRooted($mods)) { $mods = Join-Path $Mo2 $mods }
+    [IO.Path]::GetFullPath($mods)
 }
 
 function Read-GamePath([string]$Mo2) {
@@ -412,6 +436,16 @@ if ($Uninstall) {
     Step 'Удаление SkyrimTools'
     Unregister-Plugin
     $home_ = Get-UserEnv 'SKYRIM_TOOLS_HOME'
+    $mo2_ = Get-UserEnv 'SKYRIM_MO2_DIR'
+    if ($mo2_ -and (Test-Path -LiteralPath (Join-Path $mo2_ 'ModOrganizer.ini'))) {
+        $slMod = Join-Path (Get-Mo2ModsDir $mo2_) $SkyLinkModName
+        if (Test-Path -LiteralPath (Join-Path $slMod $SkyLinkMarker)) {
+            if (AskYesNo "Удалить мод '$slMod', который поставил setup -SkyLink?" $false) {
+                Remove-Item -LiteralPath $slMod -Recurse -Force; Ok "$slMod удалена"
+            }
+            else { Say "   мод оставлен: $slMod" }
+        }
+    }
     foreach ($n in $EnvNames) { if (Get-UserEnv $n) { [Environment]::SetEnvironmentVariable($n, $null, 'User'); Ok "переменная $n удалена" } }
     if ($home_ -and (Test-Path -LiteralPath $home_)) {
         if (AskYesNo "Удалить папку установки $home_ (houseCARL, Ghidra, проекты Ghidra)?" $false) {
@@ -491,6 +525,13 @@ Say ("   houseCARL:        " + $(if ($customHousecarl) { "свой: $customHouse
 if ($relativeMo2 -and -not $customHousecarl) { Say '                     (в ModOrganizer.ini относительный gamePath — релиз houseCARL его не откроет)' }
 $PapyrusDir = Join-Path $InstallDir 'papyrus-compiler'
 Say ("   Papyrus:          " + $(if ($NoPapyrus) { 'не ставить (-NoPapyrus)' } else { "papyrus-compiler $($Pins.PapyrusTag) -> $PapyrusDir" }))
+$SkyLinkDir = Join-Path $InstallDir 'skylink'
+$Mo2ModsDir = if ($Mo2Dir) { Get-Mo2ModsDir $Mo2Dir } else { $null }
+if ($SkyLink) {
+    $dllTarget = if ($Mo2ModsDir) { "новый мод '$SkyLinkModName' в $Mo2ModsDir (включить в MO2 самому)" } else { 'MO2 не задан: DLL останется в папке установки' }
+    Say "   SkyLink AI:       $($Pins.SkyLinkTag): сервер -> $SkyLinkDir\server; SKSE-плагин -> $dllTarget"
+}
+else { Say '   SkyLink AI:       не ставить (мост к запущенной игре: setup.cmd -SkyLink)' }
 Say ("   реверс (Ghidra):  " + $(if ($WantGhidra) { $ReDir } else { 'не ставить' }))
 if ($FilesOnly) { Say '   режим -FilesOnly: переменные окружения и settings.json не трогаю' }
 else {
@@ -590,6 +631,55 @@ else {
     Say '   компиляция: python scripts\papyrus\papyrusc.py compile <.psc> -o <новый мод>\Scripts (импорты берутся из MO2)'
 }
 
+# ================================================================ 2c. SkyLink AI
+
+if (-not $SkyLink) { Step '2c. SkyLink AI — пропущен (поставить: setup.cmd -SkyLink)' }
+else {
+    Step '2c. SkyLink AI (мост к запущенной игре)'
+    $slServer = Join-Path $SkyLinkDir 'server'
+    $slExe = Join-Path $slServer 'SkyrimMCP.exe'
+    $slDll = Join-Path $SkyLinkDir 'SKSE\Plugins\SkyrimMCPPlugin.dll'
+    $slVersion = Join-Path $SkyLinkDir 'VERSION'
+    $slTag = if (Test-Path -LiteralPath $slVersion) { (Get-Content -LiteralPath $slVersion -Raw).Trim() } else { '' }
+    if ($slTag -eq $Pins.SkyLinkTag -and (Test-Path -LiteralPath $slExe) -and (Test-Path -LiteralPath $slDll)) { Ok "SkyLink AI $slTag уже скачан" }
+    else {
+        if (Get-Process -Name 'SkyrimMCP' -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($SkyLinkDir, [StringComparison]::OrdinalIgnoreCase) }) {
+            Fail 'сервер SkyLink сейчас запущен (открыт Claude Code). Закрой все сессии Claude Code и запусти setup ещё раз.'
+        }
+        $zip = Get-File $Pins.SkyLinkUrl $Pins.SkyLinkSha "SkyLink AI $($Pins.SkyLinkTag)"
+        $unpacked = Join-Path (Split-Path $zip) 'skylink'
+        Expand-Zip $zip $unpacked
+        $srcServer = Join-Path $unpacked 'Data\SKSE\Plugins\SkyLinkAI_Server'
+        $srcDll = Join-Path $unpacked 'Data\SKSE\Plugins\SkyrimMCPPlugin.dll'
+        if (-not (Test-Path -LiteralPath (Join-Path $srcServer 'SkyrimMCP.exe')) -or -not (Test-Path -LiteralPath $srcDll)) {
+            Fail 'в архиве SkyLink AI нет Data\SKSE\Plugins\SkyLinkAI_Server\SkyrimMCP.exe или SkyrimMCPPlugin.dll'
+        }
+        if (Test-Path -LiteralPath $SkyLinkDir) { Remove-Item -LiteralPath $SkyLinkDir -Recurse -Force }
+        New-Item -ItemType Directory -Force (Join-Path $SkyLinkDir 'SKSE\Plugins') | Out-Null
+        Copy-Item -LiteralPath $srcServer -Destination $slServer -Recurse -Force
+        Copy-Item -LiteralPath $srcDll -Destination $slDll -Force
+        Set-Content -LiteralPath $slVersion -Value $Pins.SkyLinkTag -Encoding ASCII
+        Ok "SkyLink AI $($Pins.SkyLinkTag) -> $SkyLinkDir"
+    }
+    # SKSE-плагин — только в НОВУЮ папку мода (или в нашу же, помеченную маркером); чужую не трогаем.
+    if (-not $Mo2ModsDir) { Warn "MO2 не задан: поставь $slDll своим менеджером модов как SKSE\Plugins\SkyrimMCPPlugin.dll" }
+    elseif (-not (Test-Path -LiteralPath $Mo2ModsDir)) { Warn "нет папки модов MO2 $Mo2ModsDir; SKSE-плагин лежит в $slDll" }
+    else {
+        $modDir = Join-Path $Mo2ModsDir $SkyLinkModName
+        $marker = Join-Path $modDir $SkyLinkMarker
+        if ((Test-Path -LiteralPath $modDir) -and -not (Test-Path -LiteralPath $marker)) {
+            Warn "папка мода '$modDir' уже есть и создана не setup — не трогаю. SKSE-плагин: $slDll"
+        }
+        else {
+            New-Item -ItemType Directory -Force (Join-Path $modDir 'SKSE\Plugins') | Out-Null
+            Copy-Item -LiteralPath $slDll -Destination (Join-Path $modDir 'SKSE\Plugins\SkyrimMCPPlugin.dll') -Force
+            Set-Content -LiteralPath $marker -Value "SkyLink AI $($Pins.SkyLinkTag), installed by SkyrimTools setup.ps1. MCP server: $slServer" -Encoding ASCII
+            Ok "SKSE-плагин -> $modDir (мод ВЫКЛЮЧЕН, пока не отметишь его в левой панели MO2; F5 — обновить список)"
+        }
+    }
+    Say '   сервер стартует и без игры; инструменты отвечают, только когда игра запущена через SKSE с включённым модом.'
+}
+
 # ================================================================ 3. Ghidra
 
 if ($WantGhidra) {
@@ -668,6 +758,7 @@ if ($script:Temp -and (Test-Path -LiteralPath $script:Temp)) { Remove-Item -Lite
 Step 'Готово'
 Say '   1. Полностью закрой и снова открой Claude Code (все окна и терминалы), чтобы подхватились переменные.'
 Say '   2. В Claude Code: /plugin — должен быть включён skyrim-tools; /mcp — серверы housecarl и pyghidra-mcp.'
+if ($SkyLink) { Say "   *  SkyLink AI: включи мод '$SkyLinkModName' в MO2 и запускай игру через SKSE; сервер skylink в /mcp." }
 if (-not $Mo2Dir) { Say '   3. При первом обращении houseCARL спросит папку MO2 (с ModOrganizer.ini).' }
 if ($WantGhidra) {
     Say '   *  Ghidra: первый импорт SkyrimSE.exe анализируется десятки минут. Попроси Claude:'

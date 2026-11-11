@@ -18,6 +18,6 @@ is imported here so it is always in context:
   plain folder names. MCP tool names are always bare — `housecarl_records`, `housecarl_apply`.
 - `setup.cmd` registers the plugin in `%USERPROFILE%\.claude\settings.json` (backup:
   `settings.json.skyrimtools.bak`). Health checks in session: `/plugin` shows `skyrim-tools` enabled, `/mcp` shows
-  `housecarl` (and `pyghidra-mcp` if Ghidra was installed) as connected.
+  `housecarl` (and `pyghidra-mcp` if Ghidra was installed, `skylink` if `setup.cmd -SkyLink` was run) as connected.
 - Do not install the skills a second time through houseCARL's own `houseCARL-Setup.exe --claude`: the skills and the
   server would be duplicated. `scripts\agents\doctor.ps1` warns about this.

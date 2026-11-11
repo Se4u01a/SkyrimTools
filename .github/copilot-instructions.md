@@ -1,6 +1,6 @@
 # SkyrimTools — GitHub Copilot instructions
 
-SkyrimTools is a **Skyrim SE modding toolkit for coding agents**: Markdown knowledge bases in `skills/`, two MCP
+SkyrimTools is a **Skyrim SE modding toolkit for coding agents**: Markdown knowledge bases in `skills/`, three MCP
 server launchers, and small Python/PowerShell scripts. There is nothing to build; the test suite is
 `python scripts\agents\selftest.py` (CI runs it). The complete,
 authoritative guide is **[`AGENTS.md`](../AGENTS.md)** — read it before changing anything here.
@@ -14,7 +14,7 @@ authoritative guide is **[`AGENTS.md`](../AGENTS.md)** — read it before changi
   `SKYRIM_GAME_DIR`, `SKYRIM_RE_DIR`. An unset one means that part is not installed — say so, do not guess a path.
 - Check the machine with `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1`
   (`-Json` for machine-readable output).
-- MCP servers: `housecarl` (live MO2 load order, records, Papyrus, BSA/NIF, Nexus) and `pyghidra-mcp` (headless Ghidra).
+- MCP servers: `housecarl` (live MO2 load order, records, Papyrus, BSA/NIF, Nexus), `pyghidra-mcp` (headless Ghidra) and optional `skylink` (the running game, `setup.cmd -SkyLink`).
   Wiring for non-Claude clients: `docs/mcp-clients.md`. VS Code users in this workspace get `.vscode/mcp.json`.
 - Skills: read `skills/<name>/SKILL.md` in full, then the `references/` file it names. Index: `skills/README.md`.
   In Claude Code they are `housecarl:<name>`; elsewhere the bare folder name. MCP tools are always `housecarl_<tool>`.

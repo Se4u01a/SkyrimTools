@@ -3,8 +3,8 @@
     Print the MCP server configuration of this machine for any agent client, and optionally link the skills.
 
 .DESCRIPTION
-    SkyrimTools ships two stdio MCP servers behind .cmd launchers: housecarl (live MO2 load order) and pyghidra-mcp
-    (headless Ghidra). .mcp.json in the repo root is the Claude Code form and uses ${CLAUDE_PLUGIN_ROOT}, which no other
+    SkyrimTools ships three stdio MCP servers behind .cmd launchers: housecarl (live MO2 load order), pyghidra-mcp
+    (headless Ghidra) and the optional skylink (SkyLink AI, the running game). .mcp.json in the repo root is the Claude Code form and uses ${CLAUDE_PLUGIN_ROOT}, which no other
     client understands. This script prints the same two servers in the shape a given client expects, with this repo's
     absolute paths, plus the file it belongs in.
 
@@ -51,12 +51,14 @@ $Repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 $housecarl = Join-Path $Repo 'scripts\run_housecarl.cmd'
 $ghidra = Join-Path $Repo 'scripts\re\run_ghidra_mcp.cmd'
-foreach ($launcher in @($housecarl, $ghidra)) {
+$skylink = Join-Path $Repo 'scripts\run_skylink.cmd'
+foreach ($launcher in @($housecarl, $ghidra, $skylink)) {
     if (-not (Test-Path -LiteralPath $launcher)) { throw "launcher missing: $launcher (incomplete checkout?)" }
 }
 if ($Portable) {
     $housecarl = '%SKYRIM_TOOLS_REPO%\scripts\run_housecarl.cmd'
     $ghidra = '%SKYRIM_TOOLS_REPO%\scripts\re\run_ghidra_mcp.cmd'
+    $skylink = '%SKYRIM_TOOLS_REPO%\scripts\run_skylink.cmd'
 }
 
 $configPaths = @{
@@ -169,16 +171,19 @@ if ($LinkSkills) {
 # ---------------------------------------------------------------- MCP config
 $hc = New-StdioServer $housecarl -WithType
 $gh = New-StdioServer $ghidra -WithType
+$sl = New-StdioServer $skylink -WithType
 
 Write-Section "MCP servers for $Client"
 Write-Host ('  config: ' + $configPaths[$Client]) -ForegroundColor DarkGray
 Write-Host '  launchers read the SKYRIM_* user variables themselves; no env block is needed.'
 Write-Host '  startup: houseCARL a few seconds, pyghidra-mcp 20-60 s (JVM) - raise the client timeout if it gives up.'
+Write-Host '  skylink is optional (setup.cmd -SkyLink): it starts without the game and answers only while Skyrim runs.'
 
 switch ($Client) {
     'codex' {
         $hcPath = $housecarl
         $ghPath = $ghidra
+        $slPath = $skylink
         Write-Host ''
         Write-Host @"
 [mcp_servers.housecarl]
@@ -190,6 +195,11 @@ startup_timeout_sec = 120
 command = "cmd.exe"
 args = ["/c", '$ghPath']
 startup_timeout_sec = 300
+
+[mcp_servers.skylink]
+command = "cmd.exe"
+args = ["/c", '$slPath']
+startup_timeout_sec = 60
 "@
     }
     'opencode' {
@@ -197,19 +207,21 @@ startup_timeout_sec = 300
                 mcp = [pscustomobject]@{
                     housecarl    = [pscustomobject]@{ type = 'local'; command = @('cmd.exe', '/c', $housecarl); enabled = $true }
                     'pyghidra-mcp' = [pscustomobject]@{ type = 'local'; command = @('cmd.exe', '/c', $ghidra); enabled = $true }
+                    skylink      = [pscustomobject]@{ type = 'local'; command = @('cmd.exe', '/c', $skylink); enabled = $true }
                 }
             })
     }
     'vscode' {
-        Show-Json ([pscustomobject]@{ servers = [pscustomobject]@{ housecarl = $hc; 'pyghidra-mcp' = $gh } })
+        Show-Json ([pscustomobject]@{ servers = [pscustomobject]@{ housecarl = $hc; 'pyghidra-mcp' = $gh; skylink = $sl } })
     }
     { $_ -in @('cursor', 'windsurf', 'cline', 'gemini', 'json') } {
         $plainHc = New-StdioServer $housecarl
         $plainGh = New-StdioServer $ghidra
-        Show-Json ([pscustomobject]@{ mcpServers = [pscustomobject]@{ housecarl = $plainHc; 'pyghidra-mcp' = $plainGh } })
+        $plainSl = New-StdioServer $skylink
+        Show-Json ([pscustomobject]@{ mcpServers = [pscustomobject]@{ housecarl = $plainHc; 'pyghidra-mcp' = $plainGh; skylink = $plainSl } })
     }
     'claude' {
-        Show-Json ([pscustomobject]@{ mcpServers = [pscustomobject]@{ housecarl = $hc; 'pyghidra-mcp' = $gh } })
+        Show-Json ([pscustomobject]@{ mcpServers = [pscustomobject]@{ housecarl = $hc; 'pyghidra-mcp' = $gh; skylink = $sl } })
         Write-Host ''
         Write-Host '  Normally nothing to paste: setup.cmd registered the plugin. By hand:' -ForegroundColor DarkGray
         Write-Host ('  claude mcp add --transport stdio housecarl -- cmd.exe /c "' + $housecarl + '"')
@@ -250,6 +262,13 @@ if (Test-Path -LiteralPath (Join-Path $re 'venv\Scripts\pyghidra-mcp.exe')) {
     Write-Host "  pyghidra-mcp  ready: $re" -ForegroundColor Green
 } else {
     Write-Host "  pyghidra-mcp  not installed ($re) - optional, setup.cmd -Ghidra" -ForegroundColor Yellow
+}
+$slExe = [Environment]::GetEnvironmentVariable('SKYLINK_EXE', 'User')
+if (-not $slExe) { $slExe = Join-Path $home_ 'skylink\server\SkyrimMCP.exe' }
+if (Test-Path -LiteralPath $slExe) {
+    Write-Host "  skylink       ready: $slExe (tools answer only while the game runs)" -ForegroundColor Green
+} else {
+    Write-Host '  skylink       not installed - optional, setup.cmd -SkyLink' -ForegroundColor Yellow
 }
 $repoVar = [Environment]::GetEnvironmentVariable('SKYRIM_TOOLS_REPO', 'User')
 if (-not $repoVar) {

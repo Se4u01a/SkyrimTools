@@ -38,7 +38,12 @@ SCRIPTS = {
     "scripts/re/decomp.py": 2, "scripts/re/disasm_at.py": 2, "scripts/re/find_vcall.py": 2, "scripts/re/mcp_call.py": 2,
     "scripts/re/pdbsym.py": 2, "scripts/re/swf_as2.py": 2, "scripts/re/thread_stacks.py": None,
     "scripts/re/vtable_slot.py": 2, "scripts/agents/selftest.py": None, "scripts/papyrus/papyrusc.py": 2,
+    "scripts/esp/espdiff.py": 2, "scripts/save/ess_scan.py": 2, "scripts/save/cosave_info.py": 2,
+    # these find the logs of this machine when called bare, so a bare run is machine-dependent
+    "scripts/logs/crash_triage.py": None, "scripts/logs/papyrus_triage.py": None,
+    "scripts/logs/skse_load_status.py": None, "scripts/logs/mirror_logs.py": None,
 }
+MODULES = {"scripts/re/skyrim_paths.py", "scripts/logs/_paths.py"}  # imported by scripts, not CLIs
 NEEDS_VENV = {"scripts/re/calls_in.py", "scripts/re/disasm_at.py", "scripts/re/find_vcall.py", "scripts/re/vtable_slot.py"}
 # Shipped files allowed to carry a drive-letter path (maintainer defaults / an example in help text).
 ABS_PATH_OK = {"scripts/re/build_id_names.py", "scripts/agents/selftest.py"}
@@ -93,7 +98,7 @@ def t_compile():
 @check("python: SCRIPTS table covers scripts/")
 def t_inventory():
     found = {rel(f) for f in glob.glob(os.path.join(REPO, "scripts", "**", "*.py"), recursive=True)}
-    found.discard("scripts/re/skyrim_paths.py")  # a module, not a CLI
+    found -= MODULES
     expect(found == set(SCRIPTS), "untested: %s; gone: %s" % (sorted(found - set(SCRIPTS)), sorted(set(SCRIPTS) - found)))
 
 
@@ -324,6 +329,148 @@ def t_espscan(tmp):
     expect(rc == 0 and "01000800 SelfTestSword" in out and "01000801 SelfTestPacked" in out, "ref: %r" % out)
     rc, out, _ = py("scripts/esp/espscan.py", esp, "dump", "01000801")
     expect(rc == 0 and "EDID [15] SelfTestPacked" in out and "KWDA [4] 11 e7 01 00" in out, "dump: %r" % out)
+
+
+@check("espdiff: diff finds the one changed subrecord, summary counts new records, truncation is INCONCLUSIVE")
+def t_espdiff(tmp):
+    def plugin(name, value, extra=b""):
+        path = os.path.join(tmp, name)
+        weap = rec("WEAP", 0x01000800, [("EDID", b"SelfTestSword\0"), ("DATA", struct.pack("<I", value))])
+        with open(path, "wb") as f:
+            f.write(rec("TES4", 0, [("HEDR", struct.pack("<fII", 1.7, 1, 0x800)), ("MAST", b"Skyrim.esm\0")]))
+            f.write(grup("WEAP", [weap + extra]))
+        return path
+    a, b = plugin("A.esp", 1), plugin("B.esp", 2)
+    rc, out, err = py("scripts/esp/espdiff.py", "diff", a, b)
+    expect(rc == 1 and "CHANGED 01000800 WEAP SelfTestSword  subrecords: DATA" in out and "differences: 1" in out,
+           (out + err)[:600])
+    rc, out, err = py("scripts/esp/espdiff.py", "diff", a, a)
+    expect(rc == 0 and "byte-identical: yes" in out and "differences: 0" in out, (out + err)[:400])
+    rc, out, err = py("scripts/esp/espdiff.py", "summary", a)
+    expect(rc == 0 and "records: 1 (1 new, 0 overrides)" in out and "problems: 0" in out, (out + err)[:400])
+    bad = os.path.join(tmp, "Bad.esp")
+    data = bytearray(open(a, "rb").read())
+    data[-6:-4] = struct.pack("<H", 40)  # the last subrecord now claims 40 bytes it does not have
+    open(bad, "wb").write(bytes(data))
+    rc, out, err = py("scripts/esp/espdiff.py", "summary", bad)
+    expect(rc == 1 and "problems: 1" in out, (out + err)[:400])
+
+
+def lz4_literal(data):
+    """One LZ4 block holding a single literal run (no match): a valid block with no compressor."""
+    n, ext = len(data), b""
+    if n >= 15:
+        rest = n - 15
+        ext = b"\xff" * (rest // 255) + bytes([rest % 255])
+    return bytes([min(n, 15) << 4]) + ext + data
+
+
+def ess_bytes():
+    ws = lambda s: struct.pack("<H", len(s.encode())) + s.encode()  # noqa: E731
+    plugins = struct.pack("<B", 1) + ws("Test.esp") + struct.pack("<H", 0)
+    header = (struct.pack("<II", 12, 7) + ws("Hero") + struct.pack("<I", 42) + ws("Whiterun") + ws("017.08.22")
+              + ws("NordRace") + struct.pack("<HffQII", 0, 0.0, 100.0, 0, 1, 1) + struct.pack("<H", 2))
+    base = 13 + 4 + len(header) + 4                      # offsets count from the length pair after the screenshot
+    table_at = 1 + 4 + len(plugins)
+    ids_at = table_at + 25 * 4
+    end = ids_at + 8
+    table = struct.pack("<25I", *([base + ids_at, base + end] + [base + ids_at] * 4 + [0] * 19))
+    payload = struct.pack("<BI", 78, len(plugins)) + plugins + table + struct.pack("<II", 1, 0x00001234)
+    block = lz4_literal(payload)
+    return (b"TESV_SAVEGAME" + struct.pack("<I", len(header)) + header + b"\x00\x00\x00\xff"
+            + struct.pack("<II", len(payload), len(block)) + block)
+
+
+@check("ess_scan / cosave_info: synthetic SE save + co-save parse completely; truncation is INCONCLUSIVE")
+def t_saves(tmp):
+    ess = os.path.join(tmp, "Mini.ess")
+    open(ess, "wb").write(ess_bytes())
+    rc, out, err = py("scripts/save/ess_scan.py", "info", ess)
+    expect(rc == 0 and '"complete": true' in out and '"playerName": "Hero"' in out and '"problems": []' in out,
+           (out + err)[:800])
+    rc, out, err = py("scripts/save/ess_scan.py", "search", ess, "--formid", "00001234")
+    expect(rc == 0 and '"matchCount": 1' in out, (out + err)[:400])
+    rc, out, err = py("scripts/save/ess_scan.py", "plugins", ess)
+    expect(rc == 0 and "Test.esp" in out, (out + err)[:400])
+    cut = os.path.join(tmp, "Cut.ess")
+    open(cut, "wb").write(ess_bytes()[:200])
+    rc, out, err = py("scripts/save/ess_scan.py", "info", cut)
+    expect(rc == 1 and "INCONCLUSIVE" in err, (out + err)[:400])
+    junk = os.path.join(tmp, "Junk.ess")
+    open(junk, "wb").write(b"not a save at all")
+    rc, out, err = py("scripts/save/ess_scan.py", "info", junk)
+    expect(rc == 2, (out + err)[:300])
+    skse = os.path.join(tmp, "Mini.skse")
+    open(skse, "wb").write(b"SKSE" + struct.pack("<IIIIIII", 1, 0x02000140, 0x01050610, 0, 0, 0, 0)
+                           + b"NGLP" + struct.pack("<II", 1, 0))
+    rc, out, err = py("scripts/save/cosave_info.py", skse)
+    expect(rc == 0 and '"chunkCount": 1' in out and '"PLGN"' in out, (out + err)[:600])
+    open(skse, "wb").write(b"XXXXjunk")
+    rc, out, err = py("scripts/save/cosave_info.py", skse)
+    expect(rc == 2 and '"ok": false' in out, (out + err)[:300])
+
+
+CRASH_DUMP = """Skyrim SSE v1.5.97
+CrashLoggerSSE v1-23-1-0 Nov  1 2025 09:12:11
+
+Unhandled exception "EXCEPTION_ACCESS_VIOLATION" at 0x7FF6EE5A1234 SkyrimSE.exe+0D280C0
+
+CALL STACK ([P]robable / [S]tack scan):
+\t[0][P] 0x7FF6EE5A1234 SkyrimSE.exe+0D280C0 FUN_140D280C0
+\t\tmov rax, [rcx]
+\t[1][P] 0x7FF6EE5A2345 SkyrimSE.exe+0C56D8F FUN_140C56D8F
+
+REGISTERS:
+\tRAX 0x0                (NULL)
+"""
+
+
+@check("log triage: crash dumps (+ --known), Papyrus log, SKSE log, append-only mirror")
+def t_logs(tmp):
+    crashes = os.path.join(tmp, "SKSE")
+    os.makedirs(crashes)
+    for stamp in ("2026-01-02-03-04-05", "2026-01-02-04-05-06"):
+        open(os.path.join(crashes, "crash-%s.log" % stamp), "w").write(CRASH_DUMP)
+    rc, out, err = py("scripts/logs/crash_triage.py", crashes)
+    expect(rc == 0 and "2 x  SkyrimSE.exe+0D280C0" in out and "RESULT: OK" in out, (out + err)[-800:])
+    known = os.path.join(tmp, "known.txt")
+    open(known, "w").write("SkyrimSE.exe+0x0D280C0  ACCEPTED  ruled in the selftest\n")
+    rc, out, err = py("scripts/logs/crash_triage.py", crashes, "--known", known)
+    expect(rc == 0 and "ACCEPTED" in out, (out + err)[-800:])
+    broken = os.path.join(tmp, "broken")
+    os.makedirs(broken)
+    for i in range(2):
+        open(os.path.join(broken, "crash-2026-01-01-00-00-0%d.log" % i), "w").write("NOT A DUMP\n")
+    rc, out, err = py("scripts/logs/crash_triage.py", broken)
+    expect(rc == 1 and "PARSER DEGRADED" in out, (out + err)[-600:])
+
+    plog = os.path.join(tmp, "Papyrus.0.log")
+    open(plog, "w").write(
+        "[01/02/2026 - 03:04:06PM] error: Cannot call GetActorValue() on a None object, aborting function call\n"
+        "stack:\n\t[alias Player on quest MyQuest (0A0012AB)].MyModScript.OnUpdate() - \"MyModScript.psc\" Line 42\n")
+    rc, out, err = py("scripts/logs/papyrus_triage.py", plog)
+    expect(rc == 0 and "MyModScript.psc" in out and "RESULT: OK" in out, (out + err)[-800:])
+
+    slog = os.path.join(tmp, "skse64.log")
+    open(slog, "w").write("checking plugin C:\\Games\\Skyrim\\Data\\SKSE\\Plugins\\GoodPlugin.dll\n"
+                          "plugin C:\\Games\\Skyrim\\Data\\SKSE\\Plugins\\GoodPlugin.dll (00000001 GoodPlugin 01020000)"
+                          " loaded correctly (handle 1)\n")
+    rc, out, err = py("scripts/logs/skse_load_status.py", "--log", slog)
+    expect(rc == 0 and "RESULT: OK (rows sum to 1 checked)" in out, (out + err)[-600:])
+
+    game = os.path.join(tmp, "docs", "Skyrim Special Edition")
+    os.makedirs(os.path.join(game, "SKSE"))
+    src = os.path.join(game, "SKSE", "one.log")
+    open(src, "w").write("first line\n")
+    env = dict(os.environ, SKYRIM_DOCUMENTS_DIR=game)
+    dest = os.path.join(tmp, "mirror")
+    rc, out, err = py("scripts/logs/mirror_logs.py", "--dest", dest, env=env)
+    expect(rc == 0 and "1 NEW" in out, (out + err)[-600:])
+    rc, out, err = py("scripts/logs/mirror_logs.py", "--dest", dest, env=env)
+    expect(rc == 0 and "1 UNCHANGED" in out, (out + err)[-600:])
+    open(src, "a").write("second line\n")
+    rc, out, err = py("scripts/logs/mirror_logs.py", "--dest", dest, env=env)
+    expect(rc == 0 and "APPENDED" in out, (out + err)[-600:])
 
 
 @check("merge_ini: adds new keys, keeps tuned values")
@@ -686,6 +833,17 @@ def t_live_ghidra():
     expect("decompile_function" in tools, "tools: %s" % tools)
 
 
+@check("live MCP: SkyLink AI launcher answers initialize + tools/list (game not needed)")
+def t_live_skylink():
+    env = user_env()
+    home = env.get("SKYRIM_TOOLS_HOME") or os.path.join(env.get("LOCALAPPDATA", ""), "SkyrimTools")
+    exe = env.get("SKYLINK_EXE") or os.path.join(home, "skylink", "server", "SkyrimMCP.exe")
+    if not os.path.isfile(exe):
+        raise Skip("not installed (optional: setup.cmd -SkyLink)")
+    tools = mcp_probe(os.path.join(REPO, "scripts", "run_skylink.cmd"), 60)
+    expect(len(tools) >= 50 and any(t.lower().replace("_", "") == "checkconnection" for t in tools), "tools: %s" % tools)
+
+
 LIVE_PSC = """ScriptName SkyrimToolsSelfTest extends Quest
 {compiled by scripts/agents/selftest.py --live; never shipped}
 Actor Property PlayerRef Auto
@@ -736,9 +894,9 @@ def t_net_nexus():
 
 
 STATIC = [t_compile, t_inventory, t_help, t_ps, t_eol, t_json, t_skills, t_indexes, t_links, t_abs_paths, t_documented,
-          t_id_table, t_espscan, t_merge_ini, t_font, t_swf, t_build_ids, t_threads, t_papyrusc, t_pdbsym_static]
+          t_id_table, t_espscan, t_espdiff, t_saves, t_logs, t_merge_ini, t_font, t_swf, t_build_ids, t_threads, t_papyrusc, t_pdbsym_static]
 LIVE = [t_live_esp, t_live_pex, t_live_swf, t_live_addrlib, t_live_venv, t_live_pdbsym, t_live_housecarl, t_live_ghidra,
-        t_live_papyrus, t_live_doctor]
+        t_live_skylink, t_live_papyrus, t_live_doctor]
 NET = [t_net_nexus]
 ARGS_GHIDRA = False
 

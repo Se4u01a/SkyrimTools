@@ -1,6 +1,6 @@
 # Skills
 
-Twelve Agent Skills live here, one folder each: `skills/<name>/SKILL.md` plus a `references/` tree the skill points
+Fifteen Agent Skills live here, one folder each: `skills/<name>/SKILL.md` plus a `references/` tree the skill points
 into. This file is the index — an agent without skill auto-discovery can read the table, then the skill.
 
 ## Rules of use
@@ -30,6 +30,9 @@ into. This file is the index — an agent without skill auto-discovery can read 
 | [`mutagen-reference`](mutagen-reference/SKILL.md) | record schema: fields, types, cardinality, writability, enum values, polymorphic arms (offline) | for record reads/writes | `index.jsonl` → `records.jsonl`, `structs.jsonl`, `arms.jsonl`, `enums.jsonl` |
 | [`skse-plugin-authoring`](skse-plugin-authoring/SKILL.md) | writing/building/auditing a native SKSE DLL against CommonLibSSE-NG, SE+AE+VR, load failures | yes | `plugin-skeleton.md`, `hooking.md`, `event-sinks.md`, `multi-runtime.md`, `load-failures.md`, `toolchain-setup.md` |
 | [`skyrim-reverse-engineering`](skyrim-reverse-engineering/SKILL.md) | crash logs, `SkyrimSE.exe+XXXX`, REL::IDs, thread snapshots, `.pdb` names, disassembly, Ghidra decompilation | no (Ghidra/RE workspace instead) | the `scripts/re/*.py` usage and Ghidra workflow |
+| [`skyrim-engine-knowledge`](skyrim-engine-knowledge/SKILL.md) | how the engine actually behaves: Papyrus runtime, records and plugins, save safety, engine quirks, NIF/audio, VR differences, porting to VR | no | `papyrus-runtime.md`, `records-and-plugins.md`, `esp-yaml-and-spriggit.md`, `save-safety.md`, `engine-quirks.md`, `nif-and-audio.md`, `vr-differences.md`, `vr-papyrus-and-input.md`, `porting-to-vr.md` |
+| [`skyrim-troubleshooting`](skyrim-troubleshooting/SKILL.md) | a crash, freeze, Papyrus error storm, SKSE DLL that did not load, save problem, or "is this mod change safe" — evidence to a verdict with `scripts/logs`, `scripts/save`, `scripts/esp` | partly (`housecarl_*` for live records) | `crash.md`, `freeze.md`, `papyrus-errors.md`, `skse-dlls.md`, `saves.md`, `mod-change-safety.md`, `conflicts-and-paths.md`, `release-review.md` |
+| [`skyrim-live-game`](skyrim-live-game/SKILL.md) | the RUNNING game through SkyLink AI (MCP `skylink`) or DevBench: read freely, change only on the user's explicit request | no (needs the live bridge) | — (self-contained) |
 | [`papyrus-compiler`](papyrus-compiler/SKILL.md) | compiling `.psc` to `.pex` here: which compiler, the MO2 import order, generated vanilla headers, what an error means | no (`housecarl_compile_script` is the MCP alternative) | `scripts/papyrus/papyrusc.py` |
 | [`nexus-api-search`](nexus-api-search/SKILL.md) | Nexus Mods search, descriptions, requirements, files, update checks — anonymous GraphQL, no API key | no | `scripts/misc/nexus_gql.py` |
 

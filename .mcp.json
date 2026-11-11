@@ -11,6 +11,12 @@
       "command": "cmd.exe",
       "args": ["/c", "${CLAUDE_PLUGIN_ROOT}/scripts/re/run_ghidra_mcp.cmd"],
       "env": {}
+    },
+    "skylink": {
+      "type": "stdio",
+      "command": "cmd.exe",
+      "args": ["/c", "${CLAUDE_PLUGIN_ROOT}/scripts/run_skylink.cmd"],
+      "env": {}
     }
   }
 }

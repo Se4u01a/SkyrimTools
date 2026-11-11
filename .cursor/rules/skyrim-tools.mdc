@@ -1,5 +1,5 @@
 ---
-description: SkyrimTools repository guide — Windows-only Skyrim SE modding toolkit (12 agent skills, houseCARL + Ghidra MCP servers, Python RE/ESP scripts). Apply when working in this repo or when a task touches Skyrim plugins, MO2 load orders, Papyrus, SPID/KID/SkyPatcher/OAR INIs, SKSE plugins or crash analysis.
+description: SkyrimTools repository guide — Windows-only Skyrim SE modding toolkit (15 agent skills, houseCARL + Ghidra + optional SkyLink MCP servers, Python RE/ESP/log/save scripts). Apply when working in this repo or when a task touches Skyrim plugins, MO2 load orders, Papyrus, SPID/KID/SkyPatcher/OAR INIs, SKSE plugins or crash analysis.
 alwaysApply: true
 ---
 
@@ -10,7 +10,7 @@ the reminder, not the reference.
 
 ## Orient
 
-- Nothing to build, no tests. Markdown knowledge in `skills/`, Python/PowerShell scripts in `scripts/`, two MCP
+- Nothing to build, no tests. Markdown knowledge in `skills/`, Python/PowerShell scripts in `scripts/`, three MCP
   launchers, an installer (`setup.cmd` / `setup.ps1`).
 - Windows-only, Skyrim SE 1.5.97-first. Heavy parts (`houseCARL`, Ghidra, JDK, venv) live outside the repo in
   `%LOCALAPPDATA%\SkyrimTools`, reached through `SKYRIM_TOOLS_REPO`, `SKYRIM_TOOLS_HOME`, `SKYRIM_MO2_DIR`,
@@ -18,7 +18,7 @@ the reminder, not the reference.
 - Check the machine: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1` (`-Json`, `-Fix`).
 - Skills: `skills/<name>/SKILL.md` + `references/` (index: `skills/README.md`). Read the whole `SKILL.md` and the
   reference it names; corpora `index.jsonl` are grepped for the quoted token to get shard + line.
-- MCP: `housecarl` (live load order, records, Papyrus, BSA/NIF, Nexus) and `pyghidra-mcp` (headless Ghidra). Tool names
+- MCP: `housecarl` (live load order, records, Papyrus, BSA/NIF, Nexus), `pyghidra-mcp` (headless Ghidra) and optional `skylink` (the running game, `setup.cmd -SkyLink`). Tool names
   are `housecarl_<tool>`. This workspace has `.vscode/mcp.json` for VS Code; other clients: `docs/mcp-clients.md`.
 
 ## Non-negotiables

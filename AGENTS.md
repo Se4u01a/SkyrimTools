@@ -1,7 +1,7 @@
 # SkyrimTools — agent guide
 
 This repository is a **Skyrim SE modding toolkit for coding agents**, not an application: there is nothing to build;
-`python scripts\agents\selftest.py` is the test suite (CI runs it on every push). It holds Markdown knowledge bases (the `skills/`), two MCP server launchers, and small
+`python scripts\agents\selftest.py` is the test suite (CI runs it on every push). It holds Markdown knowledge bases (the `skills/`), three MCP server launchers, and small
 Python/PowerShell scripts that read plugins, Papyrus, fonts, INIs, Address Library and memory. The heavy parts
 (houseCARL, Ghidra, JDK, a Python venv, a copy of `SkyrimSE.exe`) live **outside** the repo in
 `%LOCALAPPDATA%\SkyrimTools`; the repo carries no binaries, no mods, no game assets.
@@ -37,12 +37,15 @@ except the reverse-engineering scripts still works.
 |---|---|
 | `AGENTS.md` | this file — the single source of truth for agents |
 | `README.md`, `FEATURES.md`, `INSTALL.md` | install, capabilities, Russian user docs |
-| `skills/` | 12 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
+| `skills/` | 15 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
 | `.mcp.json` | MCP servers for Claude Code (`${CLAUDE_PLUGIN_ROOT}` is Claude-only) |
 | `.claude-plugin/` | Claude Code plugin + local marketplace manifests |
 | `scripts/agents/` | `doctor.ps1`, `connect.ps1`, `selftest.py` — install check, MCP/skill wiring for any agent, self-test |
+| `scripts/run_skylink.cmd` | launcher for the optional `skylink` MCP server (SkyLink AI, the running game) |
 | `.github/workflows/selftest.yml` | CI: the static self-test on `windows-latest` for every push and pull request |
-| `scripts/esp/` | `espscan.py` (raw plugin records), `pexdis.py` (`.pex` disassembler) |
+| `scripts/esp/` | `espscan.py` (raw plugin records), `pexdis.py` (`.pex` disassembler), `espdiff.py` (record-level diff of two plugins) |
+| `scripts/logs/` | `crash_triage.py`, `papyrus_triage.py`, `skse_load_status.py`, `mirror_logs.py` — crash, Papyrus and SKSE log triage; `_paths.py` finds the `Documents\My Games` folder |
+| `scripts/save/` | `ess_scan.py` (read a `.ess`: header, plugins, strings, FormIDs), `cosave_info.py` (SKSE co-save chunk inventory) |
 | `scripts/misc/` | `merge_ini.py`, `font_has.py`, `nexus_gql.py` |
 | `scripts/papyrus/` | `papyrusc.py` — compile `.psc` with the MO2 load order's imports (open-source compiler or the CK's) |
 | `scripts/re/` | Address Library, thread snapshots, `.pdb` symbols, disassembly, vtables, Ghidra launchers |
@@ -68,18 +71,21 @@ Never edit an existing mod, `plugins.txt` or `ModOrganizer.ini` unless the user 
 | `SKYRIM_RE_DIR` | RE workspace (Ghidra, JDK, venv, `projects\`, `bins\`) | `%SKYRIM_TOOLS_HOME%\re`, only with `-Ghidra` |
 | `SKYRIM_ADDRLIB_BIN` | Address Library `.bin` override (optional) | found under MO2 mods or game `Data` |
 | `PAPYRUS_COMPILER_DIR` | papyrus-compiler folder override (optional) | `%SKYRIM_TOOLS_HOME%\papyrus-compiler` (setup.cmd) |
+| `SKYRIM_DOCUMENTS_DIR` | the game folder under `Documents\My Games` (e.g. `...\Skyrim Special Edition`) for the log and save scripts (optional) | found per game folder, SE first |
+| `SKYLINK_EXE` | SkyLink AI server exe override (optional) | `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.exe` |
 
 Syntax by shell: cmd `%VAR%`, PowerShell `$env:VAR`, Git Bash `$VAR`. **An unset variable means that part is not
 installed** — say so and ask for the path; do not guess a `D:\...` path from an example in the docs.
 
 ## 3. MCP servers
 
-Two stdio servers, both launched by `.cmd` wrappers that read the variables above, so they need no arguments:
+Three stdio servers, all launched by `.cmd` wrappers that read the variables above, so they need no arguments:
 
 | Server | Launcher | Ready when | Gives you |
 |---|---|---|---|
 | `housecarl` | `scripts\run_housecarl.cmd` | `%HOUSECARL_EXE%` exists (needs .NET Runtime 10 x64) | the live MO2 load order: record reads/writes, conflicts, patches, Papyrus (de)compile, BSA, NIF, SKSE layer, Nexus |
 | `pyghidra-mcp` | `scripts\re\run_ghidra_mcp.cmd` | `%SKYRIM_RE_DIR%\venv`, `jdk-*`, `ghidra_*_PUBLIC` exist | headless Ghidra: decompile, disassemble, xrefs (auto-attaches CommonLibSSE GDT archives) |
+| `skylink` | `scripts\run_skylink.cmd` | optional: `%SKYLINK_EXE%` exists (`setup.cmd -SkyLink`); it starts without the game, but its tools answer only while Skyrim runs through SKSE with the `SkyLink AI` mod enabled | the running game: player, inventory, quests, NPCs, Papyrus calls, console; read freely, change only on the user's explicit request |
 
 houseCARL tool names are `housecarl_<tool>` on every host — `housecarl_records`, `housecarl_asset_status`,
 `housecarl_apply`, `housecarl_create`, `housecarl_forward`, `housecarl_check`, `housecarl_compile_script`,
@@ -88,6 +94,9 @@ houseCARL tool names are `housecarl_<tool>` on every host — `housecarl_records
 instance houseCARL resolved; the full argument surface is in the server's own `tools/list` and in the skills.
 `pyghidra-mcp` starts a JVM: allow 20–60 s for the first connection, and the first analysis of `SkyrimSE.exe` takes
 tens of minutes (it is cached in the Ghidra project afterwards).
+
+**If `skylink` is not available or the game is not running**, say so and stop: there is no substitute for a live read,
+and never take over the user's desktop (screenshots, keystrokes, window focus) or launch the game yourself.
 
 **If `housecarl` is not available**, do not improvise record writes. Use the substitutes and say what cannot be done
 exactly — the table is in [skills/skyrim-local-toolbox/SKILL.md](skills/skyrim-local-toolbox/SKILL.md): `espscan.py`
@@ -114,6 +123,9 @@ reference it names — the frontmatter is for routing, not the content. In Claud
 | `mutagen-reference` | offline record schema: fields, types, cardinality, writability, enum values |
 | `skse-plugin-authoring` | native SKSE DLLs (C++, CommonLibSSE-NG): skeleton, hooks, event sinks, SE/AE/VR, load failures |
 | `skyrim-reverse-engineering` | crash/offset/hang analysis: REL::IDs, thread snapshots, `.pdb`, Ghidra |
+| `skyrim-engine-knowledge` | how the engine actually behaves: Papyrus runtime, records and plugins, save safety, NIF/audio, VR differences, porting to VR |
+| `skyrim-troubleshooting` | crash, freeze, Papyrus error storm, an SKSE DLL that did not load, a save problem, whether a mod change is safe — evidence to a verdict with `scripts/logs`, `scripts/save`, `scripts/esp` |
+| `skyrim-live-game` | the RUNNING game through SkyLink AI (`skylink`) or DevBench: read freely, change only on the user's explicit request |
 | `nexus-api-search` | Nexus Mods lookups through the anonymous GraphQL API (no key, no browser) |
 | `papyrus-compiler` | compiling `.psc` -> `.pex` here: compiler choice, MO2 import order, generated vanilla headers, errors |
 
@@ -145,6 +157,14 @@ running `pyghidra-mcp` on streamable HTTP.
 | `scripts\misc\font_has.py FONT [codepoints]` | does a TTF/OTF map the glyphs (default: Cyrillic) |
 | `scripts\misc\nexus_gql.py search\|grep\|mod\|desc\|files\|raw ...` | Nexus Mods through the public GraphQL API |
 | `scripts\papyrus\papyrusc.py compile\|imports\|headers\|which ...` | compile Papyrus `.psc` to `.pex` with the imports of the live MO2 load order; skill `papyrus-compiler` |
+| `scripts\logs\crash_triage.py [dir-or-file] [--frames N] [--all] [--known FILE]` | CrashLogger/trainwreck dumps (`SKSE`, `SKSE\Crashlogs`) -> ranked signatures, the denominator first |
+| `scripts\logs\papyrus_triage.py [logfile] [--top N] [--all]` | `Papyrus.N.log` -> error shapes bucketed by form, attributed to scripts |
+| `scripts\logs\skse_load_status.py [filter] [--log PATH]` | what SKSE did with each DLL on the last launch (`skse64.log` + loader log) |
+| `scripts\logs\mirror_logs.py [--dest DIR]` | append-only copy of SKSE, crash and Papyrus logs into `%SKYRIM_TOOLS_HOME%\log-mirror`, before the next launch rotates them |
+| `scripts\logs\_paths.py` | module, not a CLI: finds `Documents\My Games` SE-first; `SKYRIM_DOCUMENTS_DIR` overrides |
+| `scripts\save\ess_scan.py list\|info\|plugins\|search\|strings\|forms ...` | read a `.ess` (SE/AE, its own LZ4), never writes; a partial parse reports INCONCLUSIVE |
+| `scripts\save\cosave_info.py COSAVE.skse [--chunks] [--top N]` | SKSE co-save structure to JSON: header, chunk inventory, coverage |
+| `scripts\esp\espdiff.py diff OLD NEW \| summary PLUGIN... [--list-overrides]` | what was added, removed or changed between two plugins; masters, new records, overrides |
 | `scripts\run_sage_havok.cmd` | launch SageHavokEditor GUI (`tools\SageHavokEditor\SageHavokEditor.exe`) |
 | `scripts\re\addrlib.py id\|off\|dump ...` | REL::ID ↔ RVA of `SkyrimSE.exe` (needs the Address Library `.bin`) |
 | `scripts\re\build_id_names.py [SRC_DIR...]` | rebuild `data/se_id_names.tsv` (maintainer only) |
@@ -158,7 +178,7 @@ running `pyghidra-mcp` on streamable HTTP.
 | `scripts\re\decomp.py BINARY NAME\|0xADDR...` | decompile through the MCP server — *Ghidra* |
 | `scripts\re\mcp_call.py [--url URL] tools\|<tool> '{json}'` | call any `pyghidra-mcp` tool from the CLI — *Ghidra* |
 
-`scripts\run_housecarl.cmd` and `scripts\re\run_ghidra_mcp.cmd` are the MCP launchers; the second also accepts extra
+`scripts\run_housecarl.cmd`, `scripts\run_skylink.cmd` and `scripts\re\run_ghidra_mcp.cmd` are the MCP launchers; the Ghidra one also accepts extra
 arguments (`-t streamable-http -p 8765`) so the Ghidra tools can be driven from a shell without an MCP client.
 
 ## 5.1 Optional third-party tools (not installed by `setup.ps1`)
@@ -189,6 +209,8 @@ Condensed from `skyrim-modding-practices`; the skill has the reasoning and the f
   re-uploads). Commit recipes, listings and scripts that rebuild them.
 - **The user is the only one who tests in game.** Never run the game or claim a change works in it. Finish with
   "built, NOT tested in game" plus what the user must do (enable the mod, rerun Pandora, restart).
+- **Reading the running game is allowed; changing it is not, unless asked.** Read live state when the user has the game
+  open; any change (items, quests, console, save/load) needs an explicit request from the user in this conversation.
 - **Verify engine facts, never quote them.** An address, REL::ID, vtable slot or "IDA says" comment is checked with
   `addrlib.py`, Ghidra or the real code before it is used or written into a comment.
 - **Keep EOLs and encodings.** The repo stores LF and `core.autocrlf=true` checks it out as CRLF here, so keep a file's

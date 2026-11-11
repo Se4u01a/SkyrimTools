@@ -5,11 +5,12 @@ MCP-серверы. С Claude Code он работает как плагин и 
 и серверы те же для любого агента (Codex, VS Code/Copilot, Cursor, Windsurf, Cline, Gemini CLI, opencode) — см.
 раздел «Другие агенты» ниже и [AGENTS.md](AGENTS.md).
 
-Два MCP-сервера:
+Три MCP-сервера (третий — по желанию):
 
 - **houseCARL** читает и пишет load order живого экземпляра MO2: записи плагинов, конфликты, патчи в новый ESP,
   (де)компиляция Papyrus, BSA, NIF, поиск на Nexus.
 - **pyghidra-mcp** — Ghidra без интерфейса, для декомпиляции SkyrimSE.exe и чужих SKSE-DLL. Ставится по желанию.
+- **skylink** — мост к **запущенной** игре через SkyLink AI. Ставится отдельно (`-SkyLink`), без него набор работает как раньше.
 
 Что всё это умеет, с примерами запросов: **[FEATURES.md](FEATURES.md)**.
 
@@ -37,7 +38,7 @@ Docker не нужен: всё работает прямо в Windows, пото�
    Перед началом установщик покажет план и будет ждать Enter.
 4. Открой Claude Code заново и проверь:
    - `/plugin` — включён `skyrim-tools`;
-   - `/mcp` — серверы `housecarl` (и `pyghidra-mcp`, если ставил Ghidra) в состоянии connected.
+   - `/mcp` — серверы `housecarl`, `pyghidra-mcp` (если ставил Ghidra) и `skylink` (если ставил SkyLink) в состоянии connected.
 
 Проверка в деле: «какой мод побеждает в записи Iron Sword?» или «напиши SPID, который выдаёт всем бандитам зелье здоровья».
 
@@ -51,6 +52,7 @@ setup.cmd -InstallDir "E:\SkyrimTools"      другая папка устано
 setup.cmd -HousecarlVersion latest          самый свежий релиз houseCARL вместо проверенного
 setup.cmd -HousecarlFromSource              собрать houseCARL из исходников (см. ниже про портативные сборки)
 setup.cmd -NoPapyrus                        не ставить компилятор Papyrus (тогда нужен Creation Kit)
+setup.cmd -SkyLink                          поставить SkyLink AI: сервер + SKSE-плагин в новую папку мода MO2
 setup.cmd -Yes                              без вопросов, всё по умолчанию
 setup.cmd -Uninstall                        убрать плагин и переменные (папку установки — после вопроса)
 ```
@@ -61,7 +63,7 @@ setup.cmd -Uninstall                        убрать плагин и пер�
 привязано к Claude Code: скиллы — обычные папки с `SKILL.md`, серверы — обычные stdio-MCP, скрипты вызываются
 напрямую.
 
-- **С чего начать агенту:** [AGENTS.md](AGENTS.md) — карта репозитория, переменные окружения, оба MCP-сервера,
+- **С чего начать агенту:** [AGENTS.md](AGENTS.md) — карта репозитория, переменные окружения, MCP-серверы,
   таблица скриптов, правила, которые нельзя нарушать. Его читают Codex и другие агенты, умеющие `AGENTS.md`; для
   остальных в репозитории лежат короткие адаптеры, ссылающиеся на него: `CLAUDE.md`, `GEMINI.md`,
   `.github/copilot-instructions.md`, `.cursor/rules/skyrim-tools.mdc`, `.windsurf/rules/skyrim-tools.md`,
@@ -77,7 +79,7 @@ setup.cmd -Uninstall                        убрать плагин и пер�
 - **MCP-серверы:** [docs/mcp-clients.md](docs/mcp-clients.md) — готовые конфиги для Codex, VS Code/Copilot, Cursor,
   Windsurf, Cline, Gemini CLI, opencode. Печатает блок с путями этой машины:
   `scripts\agents\connect.ps1 -Client <codex|vscode|cursor|windsurf|cline|gemini|opencode|json>`.
-- **VS Code:** в репозитории уже есть `.vscode/mcp.json`, оба сервера подхватываются при открытии папки.
+- **VS Code:** в репозитории уже есть `.vscode/mcp.json`, `houseCARL` и `pyghidra-mcp` подхватываются при открытии папки.
 
 Проверка в деле та же: «какой мод побеждает в записи Iron Sword?» — если сервер подключён, агент ответит по живой
 сборке, а не по догадке.
@@ -94,6 +96,10 @@ setup.cmd -Uninstall                        убрать плагин и пер�
 | .NET Runtime 10; при необходимости .NET SDK 10 и Python 3.13 | через winget, системно |
 | переменные `SKYRIM_TOOLS_REPO`, `SKYRIM_TOOLS_HOME`, `SKYRIM_MO2_DIR`, `SKYRIM_GAME_DIR`, `SKYRIM_RE_DIR` | переменные пользователя |
 | регистрация плагина | `%USERPROFILE%\.claude\settings.json` (рядом — `settings.json.skyrimtools.bak`) |
+| SkyLink AI, сервер (только `-SkyLink`, SHA-256 проверяется) | `%LOCALAPPDATA%\SkyrimTools\skylink\server` |
+| SkyLink AI, SKSE-плагин (только `-SkyLink`) | новая папка мода MO2 `SkyLink AI` — включить её в MO2 нужно самому |
+
+Мод `SkyLink AI` установщик кладёт выключенным: включи его в левой панели MO2 (F5 — обновить список) и запускай игру через SKSE.
 
 houseCARL пишет только новые плагины в новые папки модов MO2, и ничего не начинает действовать, пока ты сам не
 включишь такой мод в MO2.
@@ -123,6 +129,7 @@ setup.cmd
 - **`pyghidra-mcp` долго стартует.** JVM поднимается 20–60 секунд, это нормально. Первый анализ SkyrimSE.exe
   занимает десятки минут, дальше результат хранится в проекте.
 - **Игра AE (1.6.x).** Всё, кроме RE-скилла, работает. RE-скрипты (`addrlib.py` и соседи) рассчитаны на SE 1.5.97.
+- **`skylink` подключён, но инструменты не отвечают.** Сервер стартует без игры; ответы идут, только когда игра запущена через SKSE, сейв загружен, а мод `SkyLink AI` включён в MO2 (канал `\\.\pipe\SkyrimMCP`). На 1.5.97 мост не проверен, upstream заявляет AE 1.6.1130+.
 - **Скиллы ссылаются на `D:\Games\Issen\...`.** Это проекты автора (IssenFramework, RDF). У тебя их нет, а Claude
   предупреждён, что эти разделы описывают чужую машину.
 - **Другой агент не видит MCP-серверы.** Сначала запусти лаунчер руками: `scripts\run_housecarl.cmd` (или

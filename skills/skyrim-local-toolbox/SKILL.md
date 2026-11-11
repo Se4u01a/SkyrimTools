@@ -2,7 +2,8 @@
 name: skyrim-local-toolbox
 description: >-
   Catalog of every Skyrim modding tool on this machine and where it lives: the SkyrimTools plugin's MCP servers
-  (houseCARL, pyghidra-mcp) and scripts (espscan, pexdis, addrlib, thread_stacks, merge_ini, font_has), the
+  (houseCARL, pyghidra-mcp, optional skylink) and scripts (espscan, pexdis, addrlib, thread_stacks, merge_ini,
+  font_has, espdiff, the log/save triage scripts), the
   project tools in RDF / IssenFramework (hkxcheck, Pandora staging, clip sets, DF packs), Skyrim-Animation-Studio's
   issen-clip / df-limb, SageHavokEditor, Skyrim RE Toolkit, BethesdaGhidraScripts, and the MO2 instances. Load when you
   need a tool for a Skyrim task and do not know which one, when a housecarl_* tool is not loaded and a local substitute
@@ -12,7 +13,7 @@ description: >-
 # Local Skyrim toolbox
 
 SkyrimTools (git) is a modding toolkit for coding agents: a Claude Code plugin, and without any change the same skills,
-two MCP servers and small scripts for every other agent (`AGENTS.md` in the repo root is the guide; `skills/README.md`
+three MCP servers and small scripts for every other agent (`AGENTS.md` in the repo root is the guide; `skills/README.md`
 lists the skills). `setup.cmd` in its folder installs the heavy parts and writes user environment variables; every path
 below goes through them (cmd `%VAR%`, Git Bash `$VAR`, PowerShell `$env:VAR`). The repo's `README.md` / `INSTALL.md` say
 how it is installed and updated, `scripts\agents\doctor.ps1 -Fix` says what is missing on this machine. Working rules
@@ -46,6 +47,7 @@ projects) exists only on the author's machine. On another machine check that the
 |---|---|---|
 | `housecarl` | load order, records read/write, conflicts, Papyrus (de)compile, BSA, NIF, Nexus, SKSE layer | `scripts\run_housecarl.cmd` -> `%HOUSECARL_EXE%`, else repo build in `houseCARL\` or release in `%SKYRIM_TOOLS_HOME%\housecarl\server`; settings in `%HOUSECARL_DATA_DIR%` (default `%SKYRIM_TOOLS_HOME%\housecarl-data`); instance = `%SKYRIM_MO2_DIR%` or the one saved with `housecarl_set_mo2_instance`. Author's machine: exe built from `%SKYRIM_TOOLS_REPO%\houseCARL\.claude\worktrees\relative-game-path\src\housecarl-mcp\bin\Release\net10.0\housecarl-mcp.exe` (relative `gamePath=..\` fix, not merged) |
 | `pyghidra-mcp` | Ghidra decompile / disassemble / xrefs | `scripts\re\run_ghidra_mcp.cmd` + workspace `%SKYRIM_RE_DIR%` (`%SKYRIM_TOOLS_REPO%\re`, contains Ghidra 12.2 in `ghidra_12.2_PUBLIC` + CommonLibSSE GDT type archives) — see `skyrim-reverse-engineering` |
+| `skylink` | the RUNNING game: player, inventory, quests, NPCs, Papyrus calls, console (SkyLink AI) | `scripts\run_skylink.cmd` -> `%SKYLINK_EXE%` (default `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.exe`, `setup.cmd -SkyLink`; the SKSE plugin is a new MO2 mod `SkyLink AI` the user enables); starts without the game, tools answer only with Skyrim running — see `skyrim-live-game` |
 
 The authoring skills (`spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`,
 `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring`) come from houseCARL (commit a4dc3ebe) and call
@@ -64,7 +66,9 @@ say so when a step cannot be done exactly.
 | `writes` (`apply`, `create`, ...) | never hand-write plugins; use SPID/KID/SkyPatcher INIs in a new MO2 mod folder |
 
 ## SkyrimTools scripts (`%SKYRIM_TOOLS_REPO%\scripts`)
-- `esp\espscan.py`, `esp\pexdis.py` — above.
+- `logs\crash_triage.py`, `logs\papyrus_triage.py`, `logs\skse_load_status.py`, `logs\mirror_logs.py` — crash, Papyrus and SKSE log triage: ranked signatures, error shapes, per-DLL status, an append-only log mirror.
+- `esp\espscan.py`, `esp\pexdis.py` — above. `esp\espdiff.py diff OLD NEW | summary PLUGIN...` — record-level diff of two plugins.
+- `save\ess_scan.py list|info|plugins|search|strings|forms ...` — read a `.ess` (SE/AE, header, plugin table, strings, FormIDs); `save\cosave_info.py COSAVE.skse [--chunks]` — SKSE co-save structure to JSON. Both read-only.
 - `re\*.py` — addrlib, thread_stacks, pdbsym, disasm_at, vtable_slot, calls_in, find_vcall, swf_as2, decomp,
   mcp_call, build_id_names: see `skyrim-reverse-engineering`.
 - `misc\merge_ini.py DIST DEPLOYED` — add the keys of a shipped ini missing from the deployed one, every existing value
@@ -72,7 +76,8 @@ say so when a step cannot be done exactly.
 - `misc\nexus_gql.py search|grep|mod|desc|files` — Nexus Mods lookups through the anonymous GraphQL API; see skill
   `nexus-api-search` (use it before WebFetch on nexusmods.com).
 - `misc\font_has.py FONT [hex codepoints]` — does a TTF/OTF have the glyphs (default: Cyrillic) — for FLICK/SkyUI fonts.
-- `run_sage_havok.cmd` — launcher for `SageHavokEditor` GUI.
+- `run_sage_havok.cmd` — launcher for `SageHavokEditor` GUI. `run_skylink.cmd` — launcher for the `skylink` MCP server.
+- `logs\_paths.py` — module, not a CLI: finds the `Documents\My Games` folder, SE first (`SKYRIM_DOCUMENTS_DIR` overrides).
 - `papyrus\papyrusc.py compile|imports|headers|which` — Papyrus compiler driver: open-source papyrus-compiler
   (`%SKYRIM_TOOLS_HOME%\papyrus-compiler`, from setup) or the CK's PapyrusCompiler.exe, imports from the MO2 load
   order, vanilla headers generated from `Skyrim - Misc.bsa`; skill `papyrus-compiler`.

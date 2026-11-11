@@ -3,6 +3,27 @@
 Versions follow `.claude-plugin/plugin.json`; each has a git tag `vX.Y.Z`. Upgrade: `git pull`, run `setup.cmd`
 again, then in Claude Code `/plugin marketplace update skyrim-tools` and restart the session.
 
+## Unreleased
+
+### New
+- **Live game bridge (optional).** `setup.cmd -SkyLink` installs [SkyLink AI](https://github.com/jarvann/SkryimMCM)
+  v1.0.0 (MIT, SHA-256 pinned): the MCP server `skylink` (`scripts\run_skylink.cmd`) into
+  `%SKYRIM_TOOLS_HOME%\skylink`, its SKSE plugin into a NEW MO2 mod `SkyLink AI` that the user enables. 87 tools
+  read (and on request change) the running game. Skill `skyrim-live-game`: reads freely, writes only when asked; also
+  covers DevBench. The DLL exports `SKSEPlugin_Query`, so SKSE 1.5.97 accepts it; upstream documents AE only, and
+  nothing of it has been tested in game here.
+- **Log triage** (`scripts\logs\`): `crash_triage.py` (CrashLogger / trainwreck dumps, incl. `SKSE\Crashlogs`, ranked
+  signatures, `--known` rulings), `papyrus_triage.py` (Papyrus log error shapes by script), `skse_load_status.py` (what
+  SKSE did with every DLL), `mirror_logs.py` (append-only copy before the next launch rotates them).
+- **Saves and plugins**: `scripts\save\ess_scan.py` (SE/AE `.ess`: header, plugin table, form IDs, search; own LZ4
+  decoder), `scripts\save\cosave_info.py` (`.skse` chunk inventory), `scripts\esp\espdiff.py` (record-level diff and
+  summary of plugins). An incomplete parse is reported INCONCLUSIVE, never as a clean result.
+- Skills `skyrim-engine-knowledge` (engine, Papyrus runtime, records, save safety, NIF/audio, VR differences) and
+  `skyrim-troubleshooting` (crash, freeze, Papyrus errors, DLL load failures, saves, mod-change safety).
+- The scripts and the knowledge are adapted from
+  [skyrim-ai-assistant-toolkit](https://github.com/WingedGuardian/skyrim-ai-assistant-toolkit) (MIT); see
+  `THIRD_PARTY_NOTICES.md`.
+
 ## 1.4.0 — 2026-11-11
 
 ### New
