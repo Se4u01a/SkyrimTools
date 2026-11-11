@@ -18,6 +18,9 @@ EXE = skyrim_paths.SKYRIM_EXE
 
 def main():
     args = sys.argv[1:]
+    if "-h" in args or "--help" in args or len(args) < 2:
+        print(__doc__.strip())
+        sys.exit(0 if ("-h" in args or "--help" in args) else 2)
     exe = EXE
     if "--exe" in args:
         k = args.index("--exe")
@@ -26,7 +29,9 @@ def main():
     vid, slot = int(args[0], 0), int(args[1], 0)
     count = int(args[2]) if len(args) > 2 else 40
     _, pairs = addrlib.load(addrlib.default_bin())
-    vt = dict(pairs)[vid]
+    vt = dict(pairs).get(vid)
+    if vt is None:
+        sys.exit("REL::ID %d is not in the Address Library (an SE vtable ID is expected)" % vid)
     pe = pefile.PE(exe, fast_load=True)
     base = pe.OPTIONAL_HEADER.ImageBase
     target = struct.unpack("<Q", pe.get_data(vt + slot * 8, 8))[0] - base

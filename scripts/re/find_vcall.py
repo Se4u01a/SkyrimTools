@@ -19,6 +19,10 @@ EXE = skyrim_paths.SKYRIM_EXE
 
 
 def main():
+    help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+    if help_flag or len(sys.argv) < 4:
+        print(__doc__.strip())
+        sys.exit(0 if help_flag else 2)
     voff = int(sys.argv[1], 0)
     depth = int(sys.argv[2])
     _, pairs = addrlib.load(addrlib.default_bin())

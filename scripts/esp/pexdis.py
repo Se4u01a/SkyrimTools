@@ -93,6 +93,10 @@ def main(path):
 
 
 if __name__ == "__main__":
+    help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+    if help_flag or len(sys.argv) < 2:
+        print(__doc__.strip())
+        sys.exit(0 if help_flag else 2)
     for p in sys.argv[1:]:
         main(p)
         print()

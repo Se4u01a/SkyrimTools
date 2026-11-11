@@ -89,6 +89,10 @@ def walk(data, p, end, where, show_names, out, depth=0):
 
 
 def main():
+    help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+    if help_flag or len(sys.argv) < 2:
+        print(__doc__.strip())
+        sys.exit(0 if help_flag else 2)
     path = sys.argv[1]
     show_names = "--names" in sys.argv
     raw = open(path, "rb").read()

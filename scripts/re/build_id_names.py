@@ -60,7 +60,13 @@ def name_for(lines, k, use_line):
 
 
 def main():
+    if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+        print(__doc__.strip())
+        return
     roots = sys.argv[1:] or ROOTS
+    missing = [r for r in roots if not os.path.isdir(r)]
+    if missing:
+        sys.exit("not a source folder: %s (the shipped table is left as it is)" % ", ".join(missing))
     base = os.path.commonpath([os.path.dirname(os.path.abspath(r)) for r in roots])
     rows = {}
     for root in roots:
@@ -81,6 +87,8 @@ def main():
                         rel = os.path.relpath(path, base)
                         name = name_for(lines, k, line)
                         rows.setdefault(i, []).append((name, "%s:%d" % (rel, k + 1)))
+    if not rows:
+        sys.exit("no REL::ID uses found under %s; the shipped table is left as it is" % ", ".join(roots))
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         f.write("id\tname\twhere\n")

@@ -18,6 +18,10 @@ EXE = skyrim_paths.SKYRIM_EXE
 
 
 def main():
+    help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+    if help_flag or len(sys.argv) < 3:
+        print(__doc__.strip())
+        sys.exit(0 if help_flag else 2)
     args = sys.argv[1:]
     exe = EXE
     if "--exe" in args:

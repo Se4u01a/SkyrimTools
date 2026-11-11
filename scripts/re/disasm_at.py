@@ -1,7 +1,15 @@
-"""Show the call before each return address (RVA offsets) in an exe, and the function start guess."""
+"""Show the call before each return address (RVA offsets) in an exe, and the function start guess.
+
+python disasm_at.py <SkyrimSE.exe> <rva>...     e.g. disasm_at.py SkyrimSE.exe 5B2FA0
+"""
 import sys
 import pefile
 import capstone
+
+help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+if help_flag or len(sys.argv) < 3:
+    print(__doc__.strip())
+    sys.exit(0 if help_flag else 2)
 
 exe = sys.argv[1]
 pe = pefile.PE(exe, fast_load=True)

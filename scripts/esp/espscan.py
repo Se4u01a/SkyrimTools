@@ -49,6 +49,10 @@ def edid(data):
 
 
 def main():
+    help_flag = "-h" in sys.argv[1:] or "--help" in sys.argv[1:]
+    if help_flag or len(sys.argv) < 4:
+        print(__doc__.strip())
+        sys.exit(0 if help_flag else 2)
     path, mode, arg = sys.argv[1:4]
     buf = open(path, "rb").read()
     if mode == "text":

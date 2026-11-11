@@ -108,8 +108,8 @@ def is_after_call(hproc, mods, a):
 
 def find_pid(name):
     import subprocess
-    out = subprocess.run(["tasklist", "/FO", "CSV", "/NH", "/FI", "IMAGENAME eq " + name], capture_output=True, text=True).stdout
-    for line in out.splitlines():
+    out = subprocess.run(["tasklist", "/FO", "CSV", "/NH", "/FI", "IMAGENAME eq " + name], capture_output=True, text=True, encoding="oem", errors="replace").stdout or ""
+    for line in out.splitlines():  # tasklist prints in the OEM codepage (cp866 on Russian Windows), not UTF-8
         parts = [x.strip('"') for x in line.split('","')]
         if len(parts) > 1 and parts[0].lower() == name.lower():
             return int(parts[1])
@@ -118,6 +118,9 @@ def find_pid(name):
 
 def main():
     args = sys.argv[1:]
+    if "-h" in args or "--help" in args:
+        print(__doc__.strip())
+        return
     limit = 24
     if "--max" in args:
         k = args.index("--max")
@@ -129,8 +132,8 @@ def main():
     target = args[0] if args else "SkyrimSE.exe"
     pid = int(target) if target.isdigit() else find_pid(target)
     if not pid:
-        print("no process", target)
-        return
+        print("no process", target, "(is the game running?)", file=sys.stderr)
+        sys.exit(1)
     namer = None
     if with_ids:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
