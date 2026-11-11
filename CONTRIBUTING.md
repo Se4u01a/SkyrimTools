@@ -63,6 +63,11 @@ prints before asking, (b) a guard that skips it when already done, (c) a line in
 `README.md`/`AGENTS.md`, (d) an entry in `-Uninstall` if it writes outside the repo. Keep the SHA-256 pins in `$Pins`
 current, and bump `requirements-re.txt` only with a matching change to the `set_pdb` patch of `ghidrecomp`.
 
+## Releases
+
+Bump `version` in `.claude-plugin/plugin.json`, add the section to `CHANGELOG.md` (New / Fixed, what was verified),
+commit, tag `vX.Y.Z` on that commit and push the tag; the GitHub release reuses the CHANGELOG section as its notes.
+
 ## Commits
 
 One finished change per commit, in the imperative mood, with what was verified and what was not. Do not commit

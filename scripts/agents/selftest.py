@@ -180,6 +180,9 @@ def t_json():
             raise AssertionError("%s: %s" % (f, e))
     v = json.load(open(os.path.join(REPO, ".claude-plugin/plugin.json"), encoding="utf-8")).get("version", "")
     expect(re.fullmatch(r"\d+\.\d+\.\d+", v), "plugin.json version %r" % v)
+    log = open(os.path.join(REPO, "CHANGELOG.md"), encoding="utf-8").read()
+    top = re.search(r"^## (\d+\.\d+\.\d+)", log, re.M)
+    expect(top and top.group(1) == v, "CHANGELOG.md top section %s != plugin.json %s" % (top and top.group(1), v))
     for name, server in json.load(open(os.path.join(REPO, ".mcp.json"), encoding="utf-8"))["mcpServers"].items():
         target = server["args"][-1].replace("${CLAUDE_PLUGIN_ROOT}", REPO)
         expect(os.path.isfile(target), ".mcp.json %s -> missing %s" % (name, target))

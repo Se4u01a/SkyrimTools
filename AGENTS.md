@@ -50,6 +50,7 @@ except the reverse-engineering scripts still works.
 | `setup.cmd` / `setup.ps1` | installer / upgrader (environment, houseCARL, optional RE workspace) |
 | `requirements-re.txt` | pinned Python packages of the RE venv |
 | `CONTRIBUTING.md` | house rules for changing this repo (EOLs, paths, adding a skill or script) |
+| `CHANGELOG.md` | what changed in each tagged version (`plugin.json` carries the number) |
 
 Everything the repo writes to the user's machine is either a user environment variable or a **new MO2 mod folder**.
 Never edit an existing mod, `plugins.txt` or `ModOrganizer.ini` unless the user explicitly asked for it.
