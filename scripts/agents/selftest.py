@@ -615,6 +615,9 @@ def main():
             except Exception as e:  # a crash in the check itself is a failure too
                 status, why = "FAIL", "%s: %s" % (type(e).__name__, e)
             counts[status] += 1
+            if status == "FAIL" and os.environ.get("GITHUB_ACTIONS"):  # an annotation is readable without the log
+                esc = lambda s: s.replace("%", "%25").replace("\r", "").replace("\n", "%0A")  # noqa: E731
+                print("::error title=%s::%s" % (esc(name).replace(":", " -").replace(",", ";"), esc(why[:4000])))
             print("  %-4s %-72s %5.1fs%s" % (status, name, time.time() - t0, ("\n       " + why) if why else ""))
             sys.stdout.flush()
     print("\n%d passed, %d failed, %d skipped" % (counts["PASS"], counts["FAIL"], counts["SKIP"]))
