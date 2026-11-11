@@ -40,6 +40,7 @@ except the reverse-engineering scripts still works.
 | `skills/` | 15 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
 | `.mcp.json` | MCP servers for Claude Code (`${CLAUDE_PLUGIN_ROOT}` is Claude-only) |
 | `.claude-plugin/` | Claude Code plugin + local marketplace manifests |
+| `gateway/` | `skyrim-gateway`, the Go MCP facade (phase 0: one shared daemon proxying houseCARL, pyghidra-mcp, SkyLink); opt-in, see `gateway/README.md` |
 | `scripts/agents/` | `doctor.ps1`, `connect.ps1`, `selftest.py` — install check, MCP/skill wiring for any agent, self-test |
 | `scripts/run_skylink.cmd` | launcher for the optional `skylink` MCP server (SkyLink AI, the running game) |
 | `.github/workflows/selftest.yml` | CI: the static self-test on `windows-latest` for every push and pull request |

@@ -26,3 +26,26 @@ jobs:
           python -m pip install --disable-pip-version-check $pins
       - name: selftest
         run: python scripts/agents/selftest.py -v
+
+  gateway:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: gateway/go.mod
+          cache-dependency-path: gateway/go.sum
+      - name: gofmt
+        shell: pwsh
+        run: |
+          $bad = gofmt -l .
+          if ($bad) { $bad | ForEach-Object { Write-Output "::error file=gateway/$_::not gofmt-formatted" }; exit 1 }
+      - name: vet
+        run: go vet ./...
+      - name: test (fake backends over a real named pipe)
+        run: go test -count=1 ./...
+      - name: build
+        run: go build -trimpath -o bin/skyrim-gateway.exe ./cmd/skyrim-gateway
