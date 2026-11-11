@@ -6,6 +6,12 @@ again, then in Claude Code `/plugin marketplace update skyrim-tools` and restart
 ## Unreleased
 
 ### New
+- **skyrim-gateway (phase 0)**, `gateway/` (Go): the plugin's `.mcp.json` now starts one server,
+  `scripts\run_gateway.cmd`, instead of three. A per-user daemon shares one houseCARL, one Ghidra JVM and one
+  SkyLink connection between all sessions, starts each on first use from a cached schema, stops it when idle,
+  restarts it after a crash and answers with structured errors (`NOT_INSTALLED`, `BACKEND_LOCKED`,
+  `GAME_NOT_RUNNING`, ...). Tool names are unchanged. The exe is built on first start when Go is installed; without
+  Go only houseCARL is available. Design: `docs/design/gateway.md`.
 - **Live game bridge (optional).** `setup.cmd -SkyLink` installs [SkyLink AI](https://github.com/jarvann/SkryimMCM)
   v1.0.0 (MIT, SHA-256 pinned): the MCP server `skylink` (`scripts\run_skylink.cmd`) into
   `%SKYRIM_TOOLS_HOME%\skylink`, its SKSE plugin into a NEW MO2 mod `SkyLink AI` that the user enables. 87 tools

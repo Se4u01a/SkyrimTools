@@ -11,8 +11,10 @@ is opt-in until phase 1.
 - **One process per backend for every session.** Two agent sessions share one houseCARL, one Ghidra JVM, one SkyLink
   pipe client. This matters: SkyLink's plugin serves one pipe client at a time, and a Ghidra project opens in one
   process only.
-- **Prefixed tools.** `hc_*` (houseCARL, its `housecarl_` prefix dropped), `ghidra_*`, `live_*` (SkyLink), plus
-  `gateway_status` and `gateway_restart`. Arguments and results pass through unchanged; progress notifications are
+- **The backends' own tool names** (`housecarl_records`, `decompile_function`, SkyLink's), because the skills cite
+  them, plus `gateway_status` and `gateway_restart`; every description starts with `[backend]`. A name two backends
+  share is exposed as `<backend>_<name>` for the second one. Prefixes (`Prefix`/`Strip` in a `--config` spec) and
+  the curated names come with phase 1. Arguments and results pass through unchanged; progress notifications are
   forwarded to the session that made the call.
 - **Lazy start.** Tool schemas are cached in `%SKYRIM_TOOLS_HOME%\gateway\schemas\`. With a cache, `tools/list` starts
   nothing and a backend starts on its first call; without one (first run), the daemon lists every backend once, waiting
@@ -50,14 +52,15 @@ bin\skyrim-gateway.exe daemon     # run the daemon in the foreground (log also o
 Log: `%SKYRIM_TOOLS_HOME%\gateway\gateway.log`. Flags: `--pipe NAME`, `--config FILE` (JSON array of backend specs,
 see `internal/backend.Spec`), `--idle-exit DURATION`.
 
-### Trying it in Claude Code
+### In Claude Code
 
-Register it next to the plugin, and disable the plugin's own `pyghidra-mcp` (or `housecarl`/`skylink`) in `/mcp` for
-the same session; otherwise two processes compete for the Ghidra project lock and the gateway reports `BACKEND_LOCKED`.
+The plugin's `.mcp.json` starts `scripts\run_gateway.cmd`, which runs the first exe it finds
+(`SKYRIM_GATEWAY_EXE`, `<repo>\gateway\bin\`, `%SKYRIM_TOOLS_HOME%\gateway\`), builds it with Go on the first start
+when there is none, and without Go falls back to houseCARL alone (warning on stderr). After switching, run
+`/plugin marketplace update skyrim-tools` and start a new session: an old session's own `pyghidra-mcp` keeps the
+Ghidra project locked until it ends (`gateway_status` shows `locked`).
 
-```powershell
-claude mcp add --transport stdio skyrim-gateway -- "<repo>\gateway\bin\skyrim-gateway.exe"
-```
+Rebuilding while a daemon runs fails (Windows locks a running exe): `bin\skyrim-gateway.exe stop` first.
 
 ## Layout
 

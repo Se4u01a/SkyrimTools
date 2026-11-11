@@ -80,7 +80,10 @@ installed** — say so and ask for the path; do not guess a `D:\...` path from a
 
 ## 3. MCP servers
 
-Three stdio servers, all launched by `.cmd` wrappers that read the variables above, so they need no arguments:
+Three stdio servers, all launched by `.cmd` wrappers that read the variables above, so they need no arguments. In
+Claude Code the plugin's `.mcp.json` starts **one** server instead, `skyrim-gateway` (`scripts\run_gateway.cmd`,
+source in `gateway/`): a shared per-user daemon that runs these three as children and exposes their tools under the
+same names, plus `gateway_status` / `gateway_restart`; other clients wire the three directly (`connect.ps1`).
 
 | Server | Launcher | Ready when | Gives you |
 |---|---|---|---|
@@ -179,7 +182,7 @@ running `pyghidra-mcp` on streamable HTTP.
 | `scripts\re\decomp.py BINARY NAME\|0xADDR...` | decompile through the MCP server — *Ghidra* |
 | `scripts\re\mcp_call.py [--url URL] tools\|<tool> '{json}'` | call any `pyghidra-mcp` tool from the CLI — *Ghidra* |
 
-`scripts\run_housecarl.cmd`, `scripts\run_skylink.cmd` and `scripts\re\run_ghidra_mcp.cmd` are the MCP launchers; the Ghidra one also accepts extra
+`scripts\run_gateway.cmd` (the plugin's single entry), `scripts\run_housecarl.cmd`, `scripts\run_skylink.cmd` and `scripts\re\run_ghidra_mcp.cmd` are the MCP launchers; the Ghidra one also accepts extra
 arguments (`-t streamable-http -p 8765`) so the Ghidra tools can be driven from a shell without an MCP client.
 
 ## 5.1 Optional third-party tools (not installed by `setup.ps1`)

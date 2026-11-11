@@ -46,22 +46,24 @@ func Home(env []string) string {
 	return filepath.Join(winenv.Lookup(env, "LOCALAPPDATA"), "SkyrimTools")
 }
 
-// DefaultSpecs wraps the repo's .cmd launchers, which already resolve every path and fallback.
+// DefaultSpecs wraps the repo's .cmd launchers, which already resolve every path and fallback. Phase 0 keeps every
+// backend's own tool names (housecarl_records, decompile_function, GetPlayerInfo), because the skills cite them;
+// renaming arrives with the curated API. Names that collide across backends are disambiguated by the daemon.
 func DefaultSpecs(repo string) []backend.Spec {
 	launcher := func(rel ...string) []string {
 		return []string{"cmd.exe", "/c", filepath.Join(append([]string{repo, "scripts"}, rel...)...)}
 	}
 	return []backend.Spec{
-		{Name: "housecarl", Prefix: "hc_", Strip: "housecarl_", Command: launcher("run_housecarl.cmd"),
+		{Name: "housecarl", Command: launcher("run_housecarl.cmd"),
 			IdleMinutes: 30, StartTimeoutS: 90, MissingMarkers: []string{"houseCARL not found"},
 			Remedy: "setup.cmd", Description: "MO2 load order: records, conflicts, patches, Papyrus, BSA, NIF, SKSE, Nexus"},
-		{Name: "ghidra", Prefix: "ghidra_", Command: launcher("re", "run_ghidra_mcp.cmd"),
+		{Name: "ghidra", Command: launcher("re", "run_ghidra_mcp.cmd"),
 			IdleMinutes: 60, StartTimeoutS: 300, MissingMarkers: []string{"Ghidra workspace is incomplete"},
 			LockedMarkers: []string{"LockException", "Unable to lock project"},
 			LockedRemedy: "another pyghidra-mcp has the Ghidra project open (usually the plugin's own pyghidra-mcp entry " +
 				"in the same client): keep only one of them, then call gateway_restart",
 			Remedy: "setup.cmd -Ghidra", Description: "headless Ghidra: decompile, disassemble, xrefs of SkyrimSE.exe and DLLs"},
-		{Name: "skylink", Prefix: "live_", Command: launcher("run_skylink.cmd"),
+		{Name: "skylink", Command: launcher("run_skylink.cmd"),
 			IdleMinutes: 30, StartTimeoutS: 60, MissingMarkers: []string{"SkyLink AI not found"},
 			GameMarkers: []string{"Cannot connect to Skyrim"},
 			Remedy:      "setup.cmd -SkyLink, enable the 'SkyLink AI' mod in MO2, start the game through SKSE",

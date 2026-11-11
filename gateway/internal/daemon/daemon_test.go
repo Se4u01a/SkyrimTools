@@ -366,3 +366,25 @@ func TestLocked(t *testing.T) {
 		t.Errorf("snapshot: %+v", s)
 	}
 }
+
+// Two backends offering the same tool name: the first keeps it, the second gets "<backend>_<name>".
+func TestNameCollision(t *testing.T) {
+	starts := filepath.Join(t.TempDir(), "starts.txt")
+	env := append(os.Environ(), "GW_FAKE=ok", "GW_FAKE_STARTS="+starts)
+	a, b := fakeSpec("a", "ok"), fakeSpec("b", "ok")
+	a.Prefix, a.Strip, b.Prefix, b.Strip = "", "", "", ""
+	d := New(Options{Specs: []backend.Spec{a, b}, Env: env})
+	ctx := context.Background()
+	d.refreshTools(d.backends[0])
+	d.refreshTools(d.backends[1])
+	defer d.Shutdown()
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if r := d.routes["fake_echo"]; r.b == nil || r.b.Name != "a" {
+		t.Errorf("fake_echo routes to %+v, want backend a", r)
+	}
+	if r := d.routes["b_fake_echo"]; r.b == nil || r.b.Name != "b" || r.name != "fake_echo" {
+		t.Errorf("b_fake_echo routes to %+v", r)
+	}
+	_ = ctx
+}

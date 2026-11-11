@@ -224,6 +224,13 @@ $papyrusExe = $papyrusCandidates | Where-Object { $_ -and (Test-Path -LiteralPat
 if ($papyrusExe) { Add-Result 'Papyrus compiler' 'OK' $papyrusExe }
 else { Add-Result 'Papyrus compiler' 'WARN' 'none (open-source papyrus-compiler or the Creation Kit PapyrusCompiler.exe)' 'setup.cmd installs papyrus-compiler; scripts\papyrus\papyrusc.py which' }
 
+# ---------------------------------------------------------------- skyrim-gateway (the plugin's MCP entry)
+$gwExe = @($env:SKYRIM_GATEWAY_EXE, (Join-Path $Repo 'gateway\bin\skyrim-gateway.exe'), (Join-Path $home_ 'gateway\skyrim-gateway.exe')) |
+         Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+if ($gwExe) { Add-Result 'skyrim-gateway' 'OK' $gwExe }
+elseif (Get-Command go -ErrorAction SilentlyContinue) { Add-Result 'skyrim-gateway' 'OK' 'not built yet: scripts\run_gateway.cmd builds it with Go on the first start' }
+else { Add-Result 'skyrim-gateway' 'WARN' 'no exe and no Go: the plugin falls back to houseCARL alone (no Ghidra, no SkyLink)' 'install Go (https://go.dev/dl/) or build gateway\bin\skyrim-gateway.exe elsewhere and set SKYRIM_GATEWAY_EXE' }
+
 # ---------------------------------------------------------------- SkyLink AI (optional, live game bridge)
 $skylinkExe = if ($env:SKYLINK_EXE) { $env:SKYLINK_EXE } else { Join-Path $home_ 'skylink\server\SkyrimMCP.exe' }
 if (Test-Path -LiteralPath $skylinkExe) {

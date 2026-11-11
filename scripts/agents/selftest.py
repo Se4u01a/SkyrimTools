@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -785,9 +786,9 @@ def t_live_pdbsym():
         pdbsym_resolves(d)
 
 
-def mcp_probe(launcher, timeout):
-    p = subprocess.Popen(["cmd.exe", "/c", launcher], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, env=user_env(), cwd=REPO)
+def mcp_probe(launcher, timeout, args=(), env=None):
+    p = subprocess.Popen(["cmd.exe", "/c", launcher] + list(args), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, env=env or user_env(), cwd=REPO)
     lines, err = [], []
     threading.Thread(target=lambda: lines.extend(p.stdout), daemon=True).start()
     threading.Thread(target=lambda: err.extend(p.stderr), daemon=True).start()
@@ -831,6 +832,22 @@ def t_live_ghidra():
     re_dir()
     tools = mcp_probe(os.path.join(REPO, "scripts", "re", "run_ghidra_mcp.cmd"), 240)
     expect("decompile_function" in tools, "tools: %s" % tools)
+
+
+@check("live MCP: skyrim-gateway launcher (.mcp.json) fronts houseCARL with the original tool names")
+def t_live_gateway():
+    exe = os.path.join(REPO, "gateway", "bin", "skyrim-gateway.exe")
+    have_go = shutil.which("go") is not None
+    if not os.path.isfile(exe) and not have_go:
+        raise Skip("no gateway\\bin\\skyrim-gateway.exe and no Go to build it (the launcher falls back to houseCARL)")
+    pipe_args = ["--pipe", "skyrim-gateway-selftest"]  # its own daemon: never the one a client session is using
+    try:
+        tools = mcp_probe(os.path.join(REPO, "scripts", "run_gateway.cmd"), 180, pipe_args)
+        expect("gateway_status" in tools and "housecarl_records" in tools,
+               "tools: %s" % sorted(tools)[:40])
+    finally:
+        if os.path.isfile(exe):
+            run([exe, "stop"] + pipe_args, timeout=30)
 
 
 @check("live MCP: SkyLink AI launcher answers initialize + tools/list (game not needed)")
@@ -896,7 +913,7 @@ def t_net_nexus():
 STATIC = [t_compile, t_inventory, t_help, t_ps, t_eol, t_json, t_skills, t_indexes, t_links, t_abs_paths, t_documented,
           t_id_table, t_espscan, t_espdiff, t_saves, t_logs, t_merge_ini, t_font, t_swf, t_build_ids, t_threads, t_papyrusc, t_pdbsym_static]
 LIVE = [t_live_esp, t_live_pex, t_live_swf, t_live_addrlib, t_live_venv, t_live_pdbsym, t_live_housecarl, t_live_ghidra,
-        t_live_skylink, t_live_papyrus, t_live_doctor]
+        t_live_gateway, t_live_skylink, t_live_papyrus, t_live_doctor]
 NET = [t_net_nexus]
 ARGS_GHIDRA = False
 

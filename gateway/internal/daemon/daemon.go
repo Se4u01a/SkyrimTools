@@ -77,10 +77,11 @@ func New(opts Options) *Daemon {
 	d := &Daemon{opts: opts, log: opts.Logger, routes: map[string]route{}, owned: map[string][]string{},
 		lastSeen: time.Now(), quit: make(chan struct{})}
 	d.server = mcp.NewServer(&mcp.Implementation{Name: "skyrim-gateway", Version: opts.Version}, &mcp.ServerOptions{
-		Instructions: "SkyrimTools facade. Tools are prefixed by backend: hc_ (houseCARL: MO2 load order, records, " +
-			"patches, Papyrus, BSA, NIF, Nexus), ghidra_ (decompile SkyrimSE.exe / DLLs), live_ (SkyLink AI: the RUNNING " +
-			"game; read freely, change it only when the user asks). gateway_status shows which backends are installed, " +
-			"running or missing and how to install them; a backend starts on its first call.",
+		Instructions: "SkyrimTools facade over several backends; every tool description starts with its backend in " +
+			"brackets: [housecarl] MO2 load order, records, patches, Papyrus, BSA, NIF, Nexus; [ghidra] decompile " +
+			"SkyrimSE.exe and DLLs; [skylink] the RUNNING game (read freely, change it only when the user asks). " +
+			"gateway_status shows which backends are installed, running or missing and how to install them; a backend " +
+			"starts on its first call, so the first call to Ghidra can take a minute.",
 	})
 	d.addGatewayTools()
 	for _, s := range opts.Specs {
@@ -157,6 +158,11 @@ func (d *Daemon) setTools(b *backend.Backend, tools []*mcp.Tool) {
 			continue
 		}
 		name := d.facadeName(b, t.Name)
+		if other, taken := d.routes[name]; taken && other.b != b {
+			// two backends offer the same name: this one gets "<backend>_<name>"; the first keeps the plain name
+			name = b.Name + "_" + name
+			d.log.Printf("tool name %s is taken by %s: %s exposes it as %s", t.Name, other.b.Name, b.Name, name)
+		}
 		keep[name] = true
 		schema := t.InputSchema
 		if schema == nil {
