@@ -1,0 +1,28 @@
+# Static self-test: scripts compile and print usage, synthetic fixtures (plugin, INI, SWF, thread snapshot), PowerShell
+# parses, EOL/BOM rules, manifests, skill frontmatter and index.jsonl targets, Markdown links. No game, no network.
+# The same run locally: python scripts/agents/selftest.py   (add --live on a machine with the toolkit installed)
+name: selftest
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: RE venv packages the disassembly scripts import (pinned in requirements-re.txt)
+        shell: pwsh
+        run: |
+          $pins = Get-Content requirements-re.txt | Where-Object { $_ -match '^(capstone|pefile)==' }
+          python -m pip install --disable-pip-version-check $pins
+      - name: selftest
+        run: python scripts/agents/selftest.py -v

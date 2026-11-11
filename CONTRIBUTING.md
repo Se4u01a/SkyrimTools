@@ -45,6 +45,16 @@ That is the bar for a change. The agent-facing guide is [AGENTS.md](AGENTS.md); 
 3. Add a row to the scripts table in `AGENTS.md`, to the appropriate section of `README.md`, and to the skills that
    mention the tools (`skyrim-local-toolbox`, and `skyrim-reverse-engineering` for `scripts/re/`).
 4. Run it once against real input and paste the real output in the pull request. "Should work" is not a test.
+5. Add it to `SCRIPTS` in `scripts/agents/selftest.py` (the inventory check fails otherwise). It must print its docstring
+   on `-h`/`--help` and on missing arguments (exit 2), never a traceback. If it can run on a synthetic input (a tiny
+   plugin, INI, SWF, a child process), add a fixture check; if it needs this machine's data, add a `--live` check.
+
+## Testing
+
+`python scripts/agents/selftest.py` runs the static checks and fixtures; CI (`.github/workflows/selftest.yml`) runs the
+same on `windows-latest` for every push. `--live` adds the real data on this machine (game plugins, MO2 `.pex`/`.swf`,
+Address Library, RE venv, `.pdb` names, the houseCARL launcher, `doctor.ps1`), `--ghidra` the pyghidra-mcp launcher,
+`--net` a Nexus query. Run it before each commit, and `--live` whenever a script or launcher changed.
 
 ## Changing the installer
 

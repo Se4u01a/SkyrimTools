@@ -1,7 +1,8 @@
 # SkyrimTools — GitHub Copilot instructions
 
 SkyrimTools is a **Skyrim SE modding toolkit for coding agents**: Markdown knowledge bases in `skills/`, two MCP
-server launchers, and small Python/PowerShell scripts. There is nothing to build and no test suite. The complete,
+server launchers, and small Python/PowerShell scripts. There is nothing to build; the test suite is
+`python scripts\agents\selftest.py` (CI runs it). The complete,
 authoritative guide is **[`AGENTS.md`](../AGENTS.md)** — read it before changing anything here.
 
 ## The short version

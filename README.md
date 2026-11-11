@@ -17,7 +17,7 @@ opencode. Claude Code is just the packaging it ships first: open **[AGENTS.md](A
 | `AGENTS.md` | agent guide — the single source of truth for any agent; `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules`, `.windsurf/rules`, `.clinerules`, `llms.txt` are thin adapters to it |
 | `docs/mcp-clients.md` | MCP server config for Claude Code, Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode |
 | `skills/README.md` | index of the 11 skills — what each answers, and whether it needs houseCARL |
-| `scripts/agents/` | `doctor.ps1` (is this machine installed and usable?), `connect.ps1` (MCP config + skill junctions for any agent) |
+| `scripts/agents/` | `doctor.ps1` (is this machine installed and usable?), `connect.ps1` (MCP config + skill junctions for any agent), `selftest.py` (self-test; CI runs it, `--live` checks this machine) |
 | `CONTRIBUTING.md` | house rules for changing the repo (EOLs, no absolute paths, adding skills/scripts) |
 | `FEATURES.md`, `INSTALL.md` | what the toolkit does, how to install it (Russian, for users) |
 | `.claude-plugin/plugin.json` | plugin manifest (`skyrim-tools`) |
@@ -66,6 +66,7 @@ The plugin is the Claude Code path; everything below is host-neutral. Details in
 | Step | Command |
 |---|---|
 | is the machine installed and usable? | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1 -Fix` |
+| do the tools actually work here? | `python scripts\agents\selftest.py --live` (`--ghidra` also starts pyghidra-mcp) |
 | install / repair | `setup.cmd -Yes -Mo2Dir "<folder with ModOrganizer.ini>"` — the same `setup.ps1`, no agent needed |
 | find the right knowledge | [skills/README.md](skills/README.md) (index of all 11 skills), then read the whole `SKILL.md` |
 | connect the MCP servers | [docs/mcp-clients.md](docs/mcp-clients.md), or `scripts\agents\connect.ps1 -Client <codex\|vscode\|cursor\|windsurf\|cline\|gemini\|opencode\|json>` prints the block for this machine |

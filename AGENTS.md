@@ -1,7 +1,7 @@
 # SkyrimTools — agent guide
 
-This repository is a **Skyrim SE modding toolkit for coding agents**, not an application: there is nothing to build
-and no test suite. It holds Markdown knowledge bases (the `skills/`), two MCP server launchers, and small
+This repository is a **Skyrim SE modding toolkit for coding agents**, not an application: there is nothing to build;
+`python scripts\agents\selftest.py` is the test suite (CI runs it on every push). It holds Markdown knowledge bases (the `skills/`), two MCP server launchers, and small
 Python/PowerShell scripts that read plugins, Papyrus, fonts, INIs, Address Library and memory. The heavy parts
 (houseCARL, Ghidra, JDK, a Python venv, a copy of `SkyrimSE.exe`) live **outside** the repo in
 `%LOCALAPPDATA%\SkyrimTools`; the repo carries no binaries, no mods, no game assets.
@@ -40,7 +40,8 @@ except the reverse-engineering scripts still works.
 | `skills/` | 11 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
 | `.mcp.json` | MCP servers for Claude Code (`${CLAUDE_PLUGIN_ROOT}` is Claude-only) |
 | `.claude-plugin/` | Claude Code plugin + local marketplace manifests |
-| `scripts/agents/` | `doctor.ps1`, `connect.ps1` — install check and MCP/skill wiring for any agent |
+| `scripts/agents/` | `doctor.ps1`, `connect.ps1`, `selftest.py` — install check, MCP/skill wiring for any agent, self-test |
+| `.github/workflows/selftest.yml` | CI: the static self-test on `windows-latest` for every push and pull request |
 | `scripts/esp/` | `espscan.py` (raw plugin records), `pexdis.py` (`.pex` disassembler) |
 | `scripts/misc/` | `merge_ini.py`, `font_has.py`, `nexus_gql.py` |
 | `scripts/re/` | Address Library, thread snapshots, `.pdb` symbols, disassembly, vtables, Ghidra launchers |
@@ -133,6 +134,7 @@ running `pyghidra-mcp` on streamable HTTP.
 
 | Script | Use |
 |---|---|
+| `scripts\agents\selftest.py [--live] [--ghidra] [--net] [-k TEXT] [-v]` | self-test: static checks + synthetic fixtures (CI); `--live` adds real data and the MCP launchers on this machine |
 | `scripts\esp\espscan.py PLUGIN.esp text\|ref\|dump ...` | records containing a string / FormID; subrecords of one record — record reads without houseCARL |
 | `scripts\esp\pexdis.py FILE.pex` | disassemble a Papyrus `.pex` |
 | `scripts\misc\merge_ini.py DIST DEPLOYED` | add new keys of a shipped INI to the deployed one, keeping every tuned value and line |
@@ -206,4 +208,6 @@ name it. Anything that ended in a game-visible change is unverified until the us
 [CONTRIBUTING.md](CONTRIBUTING.md) has the conventions; the short version: keep the Markdown knowledge and the script
 docstrings in sync, no absolute paths, no binaries, `.cmd`/`.ps1` CRLF and everything else as it is (LF in the repo,
 CRLF in the working copy), and when you add a script or a skill, update `AGENTS.md`, `README.md`, `skills/README.md`
-and the file of the agent whose instructions you touched.
+and the file of the agent whose instructions you touched. Before committing, run `python scripts\agents\selftest.py`
+(and `--live` when you touched a script or a launcher); a new script also gets a row in its `SCRIPTS` table and,
+when it can be fed a synthetic input, a fixture check.
