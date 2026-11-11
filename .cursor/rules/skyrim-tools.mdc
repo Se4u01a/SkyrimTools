@@ -1,5 +1,5 @@
 ---
-description: SkyrimTools repository guide — Windows-only Skyrim SE modding toolkit (11 agent skills, houseCARL + Ghidra MCP servers, Python RE/ESP scripts). Apply when working in this repo or when a task touches Skyrim plugins, MO2 load orders, Papyrus, SPID/KID/SkyPatcher/OAR INIs, SKSE plugins or crash analysis.
+description: SkyrimTools repository guide — Windows-only Skyrim SE modding toolkit (12 agent skills, houseCARL + Ghidra MCP servers, Python RE/ESP scripts). Apply when working in this repo or when a task touches Skyrim plugins, MO2 load orders, Papyrus, SPID/KID/SkyPatcher/OAR INIs, SKSE plugins or crash analysis.
 alwaysApply: true
 ---
 

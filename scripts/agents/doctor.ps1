@@ -215,6 +215,15 @@ if (-not (Test-Path -LiteralPath $re)) {
     }
 }
 
+# ---------------------------------------------------------------- Papyrus compiler
+$papyrusCandidates = @()
+if ($env:PAPYRUS_COMPILER_DIR) { $papyrusCandidates += (Join-Path $env:PAPYRUS_COMPILER_DIR 'papyrus-compiler\papyrus.exe'), (Join-Path $env:PAPYRUS_COMPILER_DIR 'papyrus.exe') }
+$papyrusCandidates += (Join-Path $home_ 'papyrus-compiler\papyrus-compiler\papyrus.exe'), (Join-Path $Repo 'tools\papyrus-compiler\papyrus-compiler\papyrus.exe')
+if ($game) { $papyrusCandidates += (Join-Path $game 'Papyrus Compiler\PapyrusCompiler.exe') }
+$papyrusExe = $papyrusCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+if ($papyrusExe) { Add-Result 'Papyrus compiler' 'OK' $papyrusExe }
+else { Add-Result 'Papyrus compiler' 'WARN' 'none (open-source papyrus-compiler or the Creation Kit PapyrusCompiler.exe)' 'setup.cmd installs papyrus-compiler; scripts\papyrus\papyrusc.py which' }
+
 # ---------------------------------------------------------------- Havok and Behavior tools
 $sage = Join-Path $Repo 'tools\SageHavokEditor\SageHavokEditor.exe'
 if (Test-Path -LiteralPath $sage) {

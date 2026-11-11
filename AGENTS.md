@@ -37,13 +37,14 @@ except the reverse-engineering scripts still works.
 |---|---|
 | `AGENTS.md` | this file — the single source of truth for agents |
 | `README.md`, `FEATURES.md`, `INSTALL.md` | install, capabilities, Russian user docs |
-| `skills/` | 11 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
+| `skills/` | 12 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
 | `.mcp.json` | MCP servers for Claude Code (`${CLAUDE_PLUGIN_ROOT}` is Claude-only) |
 | `.claude-plugin/` | Claude Code plugin + local marketplace manifests |
 | `scripts/agents/` | `doctor.ps1`, `connect.ps1`, `selftest.py` — install check, MCP/skill wiring for any agent, self-test |
 | `.github/workflows/selftest.yml` | CI: the static self-test on `windows-latest` for every push and pull request |
 | `scripts/esp/` | `espscan.py` (raw plugin records), `pexdis.py` (`.pex` disassembler) |
 | `scripts/misc/` | `merge_ini.py`, `font_has.py`, `nexus_gql.py` |
+| `scripts/papyrus/` | `papyrusc.py` — compile `.psc` with the MO2 load order's imports (open-source compiler or the CK's) |
 | `scripts/re/` | Address Library, thread snapshots, `.pdb` symbols, disassembly, vtables, Ghidra launchers |
 | `data/se_id_names.tsv` | REL::ID → name table used by the RE scripts and skills |
 | `setup.cmd` / `setup.ps1` | installer / upgrader (environment, houseCARL, optional RE workspace) |
@@ -65,6 +66,7 @@ Never edit an existing mod, `plugins.txt` or `ModOrganizer.ini` unless the user 
 | `SKYRIM_GAME_DIR` | game folder (`SkyrimSE.exe`) | — unset unless detected |
 | `SKYRIM_RE_DIR` | RE workspace (Ghidra, JDK, venv, `projects\`, `bins\`) | `%SKYRIM_TOOLS_HOME%\re`, only with `-Ghidra` |
 | `SKYRIM_ADDRLIB_BIN` | Address Library `.bin` override (optional) | found under MO2 mods or game `Data` |
+| `PAPYRUS_COMPILER_DIR` | papyrus-compiler folder override (optional) | `%SKYRIM_TOOLS_HOME%\papyrus-compiler` (setup.cmd) |
 
 Syntax by shell: cmd `%VAR%`, PowerShell `$env:VAR`, Git Bash `$VAR`. **An unset variable means that part is not
 installed** — say so and ask for the path; do not guess a `D:\...` path from an example in the docs.
@@ -112,6 +114,7 @@ reference it names — the frontmatter is for routing, not the content. In Claud
 | `skse-plugin-authoring` | native SKSE DLLs (C++, CommonLibSSE-NG): skeleton, hooks, event sinks, SE/AE/VR, load failures |
 | `skyrim-reverse-engineering` | crash/offset/hang analysis: REL::IDs, thread snapshots, `.pdb`, Ghidra |
 | `nexus-api-search` | Nexus Mods lookups through the anonymous GraphQL API (no key, no browser) |
+| `papyrus-compiler` | compiling `.psc` -> `.pex` here: compiler choice, MO2 import order, generated vanilla headers, errors |
 
 The three `index.jsonl` corpora (`papyrus-reference`, `mutagen-reference`, `spid-authoring`) are lookups, not reading:
 grep for the exact quoted token, e.g. `"name":"GetActorValue"`, and it returns the shard file and the 1-indexed line.
@@ -140,6 +143,7 @@ running `pyghidra-mcp` on streamable HTTP.
 | `scripts\misc\merge_ini.py DIST DEPLOYED` | add new keys of a shipped INI to the deployed one, keeping every tuned value and line |
 | `scripts\misc\font_has.py FONT [codepoints]` | does a TTF/OTF map the glyphs (default: Cyrillic) |
 | `scripts\misc\nexus_gql.py search\|grep\|mod\|desc\|files\|raw ...` | Nexus Mods through the public GraphQL API |
+| `scripts\papyrus\papyrusc.py compile\|imports\|headers\|which ...` | compile Papyrus `.psc` to `.pex` with the imports of the live MO2 load order; skill `papyrus-compiler` |
 | `scripts\run_sage_havok.cmd` | launch SageHavokEditor GUI (`tools\SageHavokEditor\SageHavokEditor.exe`) |
 | `scripts\re\addrlib.py id\|off\|dump ...` | REL::ID ↔ RVA of `SkyrimSE.exe` (needs the Address Library `.bin`) |
 | `scripts\re\build_id_names.py [SRC_DIR...]` | rebuild `data/se_id_names.tsv` (maintainer only) |

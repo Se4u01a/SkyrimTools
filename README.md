@@ -16,15 +16,16 @@ opencode. Claude Code is just the packaging it ships first: open **[AGENTS.md](A
 |---|---|
 | `AGENTS.md` | agent guide — the single source of truth for any agent; `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules`, `.windsurf/rules`, `.clinerules`, `llms.txt` are thin adapters to it |
 | `docs/mcp-clients.md` | MCP server config for Claude Code, Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode |
-| `skills/README.md` | index of the 11 skills — what each answers, and whether it needs houseCARL |
+| `skills/README.md` | index of the 12 skills — what each answers, and whether it needs houseCARL |
 | `scripts/agents/` | `doctor.ps1` (is this machine installed and usable?), `connect.ps1` (MCP config + skill junctions for any agent), `selftest.py` (self-test; CI runs it, `--live` checks this machine) |
 | `CONTRIBUTING.md` | house rules for changing the repo (EOLs, no absolute paths, adding skills/scripts) |
 | `FEATURES.md`, `INSTALL.md` | what the toolkit does, how to install it (Russian, for users) |
 | `.claude-plugin/plugin.json` | plugin manifest (`skyrim-tools`) |
 | `.claude-plugin/marketplace.json` | local marketplace `skyrim-tools` with this one plugin |
 | `.mcp.json` | MCP servers: `housecarl` (load order, records, Papyrus, Nexus), `pyghidra-mcp` (Ghidra) |
-| `skills/` | `skyrim-local-toolbox` (catalog of all tools), `nexus-api-search` (preferred Nexus lookups via GraphQL), `skyrim-modding-practices`, `skyrim-reverse-engineering`, and from houseCARL: `spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`, `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring` |
+| `skills/` | `skyrim-local-toolbox` (catalog of all tools), `nexus-api-search` (preferred Nexus lookups via GraphQL), `skyrim-modding-practices`, `skyrim-reverse-engineering`, `papyrus-compiler`, and from houseCARL: `spid-authoring`, `kid-authoring`, `skypatcher-authoring`, `open-animation-replacer`, `papyrus-reference`, `mutagen-reference`, `skse-plugin-authoring` |
 | `scripts/re/` | Address Library, thread snapshots, .pdb symbols, disassembly, vtable slots, Ghidra MCP launcher and CLI client |
+| `scripts/papyrus/` | `papyrusc.py`: compile `.psc` -> `.pex` with the MO2 load order's imports (open-source papyrus-compiler from setup, or the CK's) |
 | `scripts/esp/` | `espscan.py` (plugin records), `pexdis.py` (.pex disassembly) |
 | `scripts/misc/` | `merge_ini.py` (merge new ini keys into a deployed ini), `font_has.py` (font glyph check), `nexus_gql.py` (Nexus search / description / files via the anonymous GraphQL API) |
 | `scripts/run_sage_havok.cmd` | launcher for `SageHavokEditor` GUI |
@@ -68,7 +69,7 @@ The plugin is the Claude Code path; everything below is host-neutral. Details in
 | is the machine installed and usable? | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\agents\doctor.ps1 -Fix` |
 | do the tools actually work here? | `python scripts\agents\selftest.py --live` (`--ghidra` also starts pyghidra-mcp) |
 | install / repair | `setup.cmd -Yes -Mo2Dir "<folder with ModOrganizer.ini>"` — the same `setup.ps1`, no agent needed |
-| find the right knowledge | [skills/README.md](skills/README.md) (index of all 11 skills), then read the whole `SKILL.md` |
+| find the right knowledge | [skills/README.md](skills/README.md) (index of all 12 skills), then read the whole `SKILL.md` |
 | connect the MCP servers | [docs/mcp-clients.md](docs/mcp-clients.md), or `scripts\agents\connect.ps1 -Client <codex\|vscode\|cursor\|windsurf\|cline\|gemini\|opencode\|json>` prints the block for this machine |
 | reuse the skills | `scripts\agents\connect.ps1 -Client codex -LinkSkills` junctions every skill into `~\.codex\skills` (`-Client claude` for `~\.claude\skills`, `-Client dsh` for `~\.dsh\skills`, `-SkillsTarget <dir>` for anything else) |
 

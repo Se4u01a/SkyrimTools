@@ -58,7 +58,7 @@ say so when a step cannot be done exactly.
 | `asset_status` (which mod wins a path) | search `mods\*\<path>` (Glob), order by `modlist.txt`; BSAs: check `mods\<mod>\*.bsa` |
 | `records` read / FormID lookup | `python %SKYRIM_TOOLS_REPO%\scripts\esp\espscan.py plugin.esp text|ref|dump ...` (raw subrecords; `import espscan` gives `records()`, `subrecords()`, `edid()`) |
 | `decompile_script` | `python %SKYRIM_TOOLS_REPO%\scripts\esp\pexdis.py file.pex` (disassembly) or the mod's `scripts\source\*.psc` |
-| `compile_script` | none outside houseCARL; check signatures with `papyrus-reference` |
+| `compile_script` | `python %SKYRIM_TOOLS_REPO%\scripts\papyrus\papyrusc.py compile X.psc -o <new mod>\Scripts` (skill `papyrus-compiler`); signatures with `papyrus-reference` |
 | `skse` layer | read `mods\*\SKSE\Plugins\*.ini|*.json` and the SKSE logs |
 | `nif_inspect` | Skyrim-Animation-Studio's crates read NIFs (`df-limb`); else ask the user to open NifSkope |
 | `writes` (`apply`, `create`, ...) | never hand-write plugins; use SPID/KID/SkyPatcher INIs in a new MO2 mod folder |
@@ -73,6 +73,9 @@ say so when a step cannot be done exactly.
   `nexus-api-search` (use it before WebFetch on nexusmods.com).
 - `misc\font_has.py FONT [hex codepoints]` — does a TTF/OTF have the glyphs (default: Cyrillic) — for FLICK/SkyUI fonts.
 - `run_sage_havok.cmd` — launcher for `SageHavokEditor` GUI.
+- `papyrus\papyrusc.py compile|imports|headers|which` — Papyrus compiler driver: open-source papyrus-compiler
+  (`%SKYRIM_TOOLS_HOME%\papyrus-compiler`, from setup) or the CK's PapyrusCompiler.exe, imports from the MO2 load
+  order, vanilla headers generated from `Skyrim - Misc.bsa`; skill `papyrus-compiler`.
 
 ## Animation tools
 - Skyrim-Animation-Studio, `D:\projects\Skyrim-Animation-Studio` (Rust, branch `issen-sequence`,

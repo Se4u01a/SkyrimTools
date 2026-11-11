@@ -8,7 +8,7 @@ lists what the toolkit does.
 ## Docs
 
 - [AGENTS.md](AGENTS.md): repository map, environment variables, MCP servers, script reference, non-negotiable rules.
-- [skills/README.md](skills/README.md): index of all 11 skills — what each answers, whether it needs the MCP server.
+- [skills/README.md](skills/README.md): index of all 12 skills — what each answers, whether it needs the MCP server.
 - [docs/mcp-clients.md](docs/mcp-clients.md): MCP server config for Claude Code, Codex, VS Code, Cursor, Windsurf, Cline, Gemini CLI, opencode.
 - [README.md](README.md): overview, contents table, install/update summary.
 - [CONTRIBUTING.md](CONTRIBUTING.md): house rules for changing the repo (EOLs, no absolute paths, adding skills/scripts).
@@ -27,6 +27,7 @@ lists what the toolkit does.
 - [skills/skse-plugin-authoring/SKILL.md](skills/skse-plugin-authoring/SKILL.md): native SKSE DLLs with CommonLibSSE-NG.
 - [skills/skyrim-reverse-engineering/SKILL.md](skills/skyrim-reverse-engineering/SKILL.md): crash logs, offsets, thread snapshots, Ghidra.
 - [skills/nexus-api-search/SKILL.md](skills/nexus-api-search/SKILL.md): Nexus Mods through the anonymous GraphQL API.
+- [skills/papyrus-compiler/SKILL.md](skills/papyrus-compiler/SKILL.md): compile Papyrus .psc to .pex with the MO2 load order's imports.
 
 ## Optional
 

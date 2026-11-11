@@ -1,6 +1,6 @@
 # Skills
 
-Eleven Agent Skills live here, one folder each: `skills/<name>/SKILL.md` plus a `references/` tree the skill points
+Twelve Agent Skills live here, one folder each: `skills/<name>/SKILL.md` plus a `references/` tree the skill points
 into. This file is the index — an agent without skill auto-discovery can read the table, then the skill.
 
 ## Rules of use
@@ -30,6 +30,7 @@ into. This file is the index — an agent without skill auto-discovery can read 
 | [`mutagen-reference`](mutagen-reference/SKILL.md) | record schema: fields, types, cardinality, writability, enum values, polymorphic arms (offline) | for record reads/writes | `index.jsonl` → `records.jsonl`, `structs.jsonl`, `arms.jsonl`, `enums.jsonl` |
 | [`skse-plugin-authoring`](skse-plugin-authoring/SKILL.md) | writing/building/auditing a native SKSE DLL against CommonLibSSE-NG, SE+AE+VR, load failures | yes | `plugin-skeleton.md`, `hooking.md`, `event-sinks.md`, `multi-runtime.md`, `load-failures.md`, `toolchain-setup.md` |
 | [`skyrim-reverse-engineering`](skyrim-reverse-engineering/SKILL.md) | crash logs, `SkyrimSE.exe+XXXX`, REL::IDs, thread snapshots, `.pdb` names, disassembly, Ghidra decompilation | no (Ghidra/RE workspace instead) | the `scripts/re/*.py` usage and Ghidra workflow |
+| [`papyrus-compiler`](papyrus-compiler/SKILL.md) | compiling `.psc` to `.pex` here: which compiler, the MO2 import order, generated vanilla headers, what an error means | no (`housecarl_compile_script` is the MCP alternative) | `scripts/papyrus/papyrusc.py` |
 | [`nexus-api-search`](nexus-api-search/SKILL.md) | Nexus Mods search, descriptions, requirements, files, update checks — anonymous GraphQL, no API key | no | `scripts/misc/nexus_gql.py` |
 
 ## Using these skills from another agent

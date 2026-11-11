@@ -32,7 +32,8 @@ This covers the **API surface**. Reading a modlist's actual `.psc` source is a f
 own file tool — or, when the winner is inside an archive, which is where most framework scripts
 ship, `housecarl_bsa_extract` with `archive=`, `out_path=` and `under=` the script's path first,
 and read the extracted file);
-compiling is `housecarl_compile_script`.
+compiling is `housecarl_compile_script`, or `scripts\papyrus\papyrusc.py` without houseCARL (skill
+`papyrus-compiler`).
 
 The corpus is the cheap route to a signature, not the only one and not the proof. The deterministic
 check is the compile: `housecarl_compile_script` binds every call against the real sources on the

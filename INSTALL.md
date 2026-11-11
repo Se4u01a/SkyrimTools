@@ -50,6 +50,7 @@ setup.cmd -NoGhidra                         не ставить и не спра
 setup.cmd -InstallDir "E:\SkyrimTools"      другая папка установки (по умолчанию %LOCALAPPDATA%\SkyrimTools)
 setup.cmd -HousecarlVersion latest          самый свежий релиз houseCARL вместо проверенного
 setup.cmd -HousecarlFromSource              собрать houseCARL из исходников (см. ниже про портативные сборки)
+setup.cmd -NoPapyrus                        не ставить компилятор Papyrus (тогда нужен Creation Kit)
 setup.cmd -Yes                              без вопросов, всё по умолчанию
 setup.cmd -Uninstall                        убрать плагин и переменные (папку установки — после вопроса)
 ```
@@ -87,6 +88,8 @@ setup.cmd -Uninstall                        убрать плагин и пер�
 |---|---|
 | houseCARL (сервер из [релиза](https://github.com/Avick3110/houseCARL/releases), SHA-256 проверяется) | `%LOCALAPPDATA%\SkyrimTools\housecarl\server` |
 | настройки houseCARL (сохранённый экземпляр MO2) | `%LOCALAPPDATA%\SkyrimTools\housecarl-data` |
+| компилятор Papyrus [papyrus-compiler](https://github.com/russo-2025/papyrus-compiler) (MIT, ~1 МБ, SHA-256 проверяется; без `-NoPapyrus`) | `%LOCALAPPDATA%\SkyrimTools\papyrus-compiler` |
+| ванильные заголовки Papyrus, сгенерированные из `Skyrim - Misc.bsa` при первой компиляции | `%LOCALAPPDATA%\SkyrimTools\papyrus-headers` |
 | JDK 25, Ghidra 12.2, Python venv, проекты Ghidra, копия SkyrimSE.exe (только `-Ghidra`) | `%LOCALAPPDATA%\SkyrimTools\re` |
 | .NET Runtime 10; при необходимости .NET SDK 10 и Python 3.13 | через winget, системно |
 | переменные `SKYRIM_TOOLS_REPO`, `SKYRIM_TOOLS_HOME`, `SKYRIM_MO2_DIR`, `SKYRIM_GAME_DIR`, `SKYRIM_RE_DIR` | переменные пользователя |

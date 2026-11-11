@@ -37,7 +37,7 @@ SCRIPTS = {
     "scripts/re/addrlib.py": 2, "scripts/re/build_id_names.py": None, "scripts/re/calls_in.py": 2,
     "scripts/re/decomp.py": 2, "scripts/re/disasm_at.py": 2, "scripts/re/find_vcall.py": 2, "scripts/re/mcp_call.py": 2,
     "scripts/re/pdbsym.py": 2, "scripts/re/swf_as2.py": 2, "scripts/re/thread_stacks.py": None,
-    "scripts/re/vtable_slot.py": 2, "scripts/agents/selftest.py": None,
+    "scripts/re/vtable_slot.py": 2, "scripts/agents/selftest.py": None, "scripts/papyrus/papyrusc.py": 2,
 }
 NEEDS_VENV = {"scripts/re/calls_in.py", "scripts/re/disasm_at.py", "scripts/re/find_vcall.py", "scripts/re/vtable_slot.py"}
 # Shipped files allowed to carry a drive-letter path (maintainer defaults / an example in help text).
@@ -382,6 +382,129 @@ def t_threads():
         child.kill()
 
 
+def pex_bytes(name, parent, funcs):
+    """A minimal .pex: one object, empty-state functions [(name, ret, [(type, pname)], native, global)]."""
+    strings = []
+
+    def s(x):
+        if x not in strings:
+            strings.append(x)
+        return struct.pack(">H", strings.index(x))
+
+    obj = b""
+    obj += struct.pack(">H", 0) + struct.pack(">H", 0)  # 0 variables, 0 properties
+    obj += struct.pack(">H", 1) + s("") + struct.pack(">H", len(funcs))
+    for fname, ret, params, native, glob in funcs:
+        obj += s(fname) + s(ret) + s("") + struct.pack(">IB", 0, (2 if native else 0) | (1 if glob else 0))
+        obj += struct.pack(">H", len(params)) + b"".join(s(n) + s(t) for t, n in params)
+        obj += struct.pack(">HH", 0, 0)  # no locals, no instructions
+    head = s(name) + struct.pack(">I", 0) + s(parent) + s("") + struct.pack(">I", 0) + s("")
+    body = head + obj
+    table = struct.pack(">H", len(strings)) + b"".join(struct.pack(">H", len(x)) + x.encode() for x in strings)
+    hdr = struct.pack(">IBBHQ", 0xFA57C0DE, 3, 2, 1, 0) + b"".join(struct.pack(">H", 0) for _ in range(3))
+    return hdr + table + b"\x00" + struct.pack(">H", 0) + struct.pack(">H", 1) + body
+
+
+def bsa_bytes(files):
+    """A minimal uncompressed SSE (v105) BSA with one folder 'scripts' holding {name.pex: bytes}."""
+    names = sorted(files)
+    nfile = len(names)
+    folder = b"scripts\0"
+    names_blob = b"".join(n.encode() + b"\0" for n in names)
+    off = 36
+    recs_end = off + 24 + 1 + len(folder) + 16 * nfile
+    data_start = recs_end + len(names_blob)
+    out = struct.pack("<4sIIIIIIIHH", b"BSA\0", 105, off, 0x3, 1, nfile, len(folder), len(names_blob), 0, 0)
+    out += struct.pack("<QIIQ", 0, nfile, 0, off + 24 + len(names_blob))
+    out += bytes([len(folder)]) + folder
+    pos, blobs = data_start, b""
+    for n in names:
+        out += struct.pack("<QII", 0, len(files[n]), pos)
+        pos += len(files[n])
+        blobs += files[n]
+    return out + names_blob + blobs
+
+
+FAKE_COMPILER = r'''
+import os, struct, sys
+a = sys.argv[1:]
+hdr = a[a.index("-h") + 1]; out = a[a.index("-o") + 1]
+ind = a[a.index("-i") + 1]  # papyrusc stages the inputs into one folder
+ins = [os.path.join(ind, n) for n in sorted(os.listdir(ind))]
+with open(os.path.join(out, "headers.txt"), "w") as f:
+    for n in sorted(os.listdir(hdr)):
+        f.write("%s|%s\n" % (n, open(os.path.join(hdr, n)).readline().strip()))
+for p in ins:
+    if "BROKEN" in open(p).read():
+        print("%s:3:5: error: unknown type `NoSuchType`" % p)
+    else:
+        open(os.path.join(out, os.path.basename(p)[:-4] + ".pex"), "wb").write(struct.pack(">I", 0xFA57C0DE) + b"x")
+'''
+
+
+@check("papyrusc: MO2 import order, first provider wins, vanilla headers from a BSA, stub compile, write guard")
+def t_papyrusc(tmp):
+    j = lambda *p: os.path.join(tmp, *p)  # noqa: E731
+    w = lambda path, text: (os.makedirs(os.path.dirname(path), exist_ok=True), open(path, "w").write(text))  # noqa: E731
+    mo2, game = j("MO2"), j("Game")
+    w(os.path.join(mo2, "ModOrganizer.ini"), "[General]\ngamePath=@ByteArray(%s)\nselected_profile=@ByteArray(P)\n"
+      % game.replace("\\", "\\\\"))
+    w(os.path.join(mo2, "profiles", "P", "modlist.txt"), "# generated\n+Top Mod\n-Disabled Mod\n+Bottom Mod\n+Sep_separator\n")
+    w(os.path.join(mo2, "mods", "Top Mod", "Scripts", "Source", "Shared.psc"), "ScriptName Shared ; TOP\n")
+    w(os.path.join(mo2, "mods", "Bottom Mod", "Source", "Scripts", "Shared.psc"), "ScriptName Shared ; BOTTOM\n")
+    w(os.path.join(mo2, "mods", "Bottom Mod", "Source", "Scripts", "Mine.psc"), "ScriptName Mine ; MOD COPY\n")
+    w(os.path.join(mo2, "mods", "Disabled Mod", "Scripts", "Source", "Ghost.psc"), "ScriptName Ghost\n")
+    w(os.path.join(mo2, "mods", "Installed", "meta.ini"), "[General]\n")
+    w(os.path.join(mo2, "overwrite", "Scripts", "Source", "Over.psc"), "ScriptName Over\n")
+    w(os.path.join(game, "Data", "Source", "Scripts", "Form.psc"), "ScriptName Form Hidden ; GAME\n")
+    os.makedirs(os.path.join(game, "Data"), exist_ok=True)
+    open(os.path.join(game, "Data", "Skyrim - Misc.bsa"), "wb").write(bsa_bytes({
+        "debug.pex": pex_bytes("Debug", "", [("TraceAndBox", "None", [("string", "asTextToPrint"), ("int", "aiSeverity")], True, True)]),
+        "door.pex": pex_bytes("Door", "Form", []),
+        "form.pex": pex_bytes("Form", "", [("GetFormID", "int", [], True, False)])}))
+    src = j("src")
+    w(os.path.join(src, "Mine.psc"), "ScriptName Mine extends Quest\n")
+    w(os.path.join(src, "Bad.psc"), "ScriptName Bad\n; BROKEN\n")
+    stub = j("fakec.py")
+    open(stub, "w").write(FAKE_COMPILER)
+    env = dict(os.environ, SKYRIM_MO2_DIR=mo2, SKYRIM_GAME_DIR=game, SKYRIM_TOOLS_HOME=j("home"))
+    env.pop("PAPYRUS_COMPILER_DIR", None)
+    script = "scripts/papyrus/papyrusc.py"
+
+    rc, out, err = py(script, "imports", "-i", j("extra"), env=env) if os.makedirs(j("extra")) is None else (1, "", "")
+    origins = [l.split(None, 2)[2].rsplit(None, 1)[0].strip() if len(l.split()) > 2 else "" for l in out.splitlines()]
+    order = [o for o in ("-i", "MO2 overwrite", "mod: Top Mod", "mod: Bottom Mod", "game Data", "vanilla headers") if
+             any(x.startswith(o) for x in origins)]
+    expect(rc == 0 and order == ["-i", "MO2 overwrite", "mod: Top Mod", "mod: Bottom Mod", "game Data", "vanilla headers"],
+           "imports order %s\n%s%s" % (order, out, err))
+    expect("Disabled Mod" not in out, "a disabled mod is in the imports")
+
+    rc, out, err = py(script, "headers", env=env)
+    hdir = out.splitlines()[0] if out else ""
+    expect(rc == 0 and os.path.isfile(os.path.join(hdir, "Door.psc")), out + err)
+    door = open(os.path.join(hdir, "Door.psc")).read()
+    dbg = open(os.path.join(hdir, "Debug.psc")).read()
+    expect(door.startswith("ScriptName Door extends Form Hidden"), door)
+    expect("Function TraceAndBox(string asTextToPrint, int aiSeverity = 0) native global" in dbg, "default not from corpus:\n" + dbg)
+
+    outdir = j("NewMod", "Scripts")
+    rc, out, err = py(script, "compile", os.path.join(src, "Mine.psc"), os.path.join(src, "Bad.psc"), "-o", outdir,
+                      "--compiler-exe", stub, "--compiler-kind", "open", env=env)
+    expect(rc == 1, "want exit 1 (Bad fails), got %d\n%s%s" % (rc, out, err))
+    expect(os.path.isfile(os.path.join(outdir, "Mine.pex")) and not os.path.exists(os.path.join(outdir, "Bad.pex")), out)
+    expect("Bad.psc(3,5): error: unknown type" in out and "FAILED: Bad" in out and "hint:" in out, out)
+    staged = dict(l.split("|", 1) for l in open(os.path.join(outdir, "headers.txt")).read().splitlines())
+    expect("TOP" in staged.get("Shared.psc", ""), "Shared.psc should come from Top Mod: %s" % staged.get("Shared.psc"))
+    expect("Mine.psc" not in staged and "Bad.psc" not in staged, "inputs leaked into the headers")
+    expect("GAME" in staged.get("Form.psc", ""), "game Data Form.psc should beat the generated header")
+    expect("Door.psc" in staged and "Over.psc" in staged and "Ghost.psc" not in staged, sorted(staged))
+
+    rc, out, err = py(script, "compile", os.path.join(src, "Mine.psc"), "-o", os.path.join(mo2, "mods", "Installed", "Scripts"),
+                      "--compiler-exe", stub, env=env)
+    expect(rc == 2 and "refusing" in err and not os.path.exists(os.path.join(mo2, "mods", "Installed", "Scripts")),
+           "write guard: rc %d %s" % (rc, err))
+
+
 @check("pdbsym: names a symbol from a .pdb (python DLL when it ships one)")
 def t_pdbsym_static():
     base = glob.escape(os.path.dirname(PY))
@@ -560,6 +683,36 @@ def t_live_ghidra():
     expect("decompile_function" in tools, "tools: %s" % tools)
 
 
+LIVE_PSC = """ScriptName SkyrimToolsSelfTest extends Quest
+{compiled by scripts/agents/selftest.py --live; never shipped}
+Actor Property PlayerRef Auto
+Event OnInit()
+    Debug.Notification("SkyrimTools selftest: " + Game.GetModCount() + " plugins")
+    PlayerRef.EquipItem(Game.GetFormFromFile(0x12EB7, "Skyrim.esm"))
+    RegisterForSingleUpdate(1.0)
+EndEvent
+"""
+
+
+@check("live papyrusc: compile a script against this MO2 (SKSE + vanilla headers), pexdis reads it")
+def t_live_papyrus(tmp):
+    env = user_env()
+    rc, out, _ = py("scripts/papyrus/papyrusc.py", "which", env=env)
+    if rc == 3:
+        raise Skip("no Papyrus compiler (setup.cmd installs papyrus-compiler)")
+    var("SKYRIM_MO2_DIR")
+    src = os.path.join(tmp, "src", "SkyrimToolsSelfTest.psc")
+    os.makedirs(os.path.dirname(src))
+    open(src, "w").write(LIVE_PSC)
+    outdir = os.path.join(tmp, "NewMod", "Scripts")
+    rc, out, err = py("scripts/papyrus/papyrusc.py", "compile", src, "-o", outdir, env=env, timeout=600)
+    pex = os.path.join(outdir, "SkyrimToolsSelfTest.pex")
+    expect(rc == 0 and os.path.isfile(pex), (out + err)[-1500:])
+    rc, out, err = py("scripts/esp/pexdis.py", pex)
+    expect(rc == 0 and re.search(r"SCRIPTNAME SkyrimToolsSelfTest extends quest", out, re.I) and "PlayerRef" in out,
+           (out + err)[:800])
+
+
 @check("live doctor.ps1: no FAIL")
 def t_live_doctor():
     rc, out, err = run([powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
@@ -580,9 +733,9 @@ def t_net_nexus():
 
 
 STATIC = [t_compile, t_inventory, t_help, t_ps, t_eol, t_json, t_skills, t_indexes, t_links, t_abs_paths, t_documented,
-          t_id_table, t_espscan, t_merge_ini, t_font, t_swf, t_build_ids, t_threads, t_pdbsym_static]
+          t_id_table, t_espscan, t_merge_ini, t_font, t_swf, t_build_ids, t_threads, t_papyrusc, t_pdbsym_static]
 LIVE = [t_live_esp, t_live_pex, t_live_swf, t_live_addrlib, t_live_venv, t_live_pdbsym, t_live_housecarl, t_live_ghidra,
-        t_live_doctor]
+        t_live_papyrus, t_live_doctor]
 NET = [t_net_nexus]
 ARGS_GHIDRA = False
 

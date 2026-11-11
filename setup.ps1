@@ -7,6 +7,7 @@
       1. .NET Runtime 10 (x64) — нужен houseCARL; ставится через winget, если его нет.
       2. houseCARL — MCP-сервер для load order / записей / Papyrus / Nexus. Скачивается релиз с GitHub
          (SHA-256 сверяется), в папку установки кладётся только сервер (скиллы уже есть в этом репо).
+      2b. Компилятор Papyrus (.psc -> .pex) с открытым кодом, ~1 МБ, SHA-256 сверяется; -NoPapyrus — не ставить.
       3. По желанию (-Ghidra): рабочая папка для реверса — JDK 25, Ghidra 12.2, Python venv с pyghidra-mcp,
          копия SkyrimSE.exe для анализа. Около 2 ГБ на диске.
       4. Пользовательские переменные окружения SKYRIM_* (их читают лаунчеры, скрипты и скиллы).
@@ -29,6 +30,9 @@
 .PARAMETER HousecarlFromSource
     Собрать houseCARL из исходников того же тега с фиксом относительного gamePath (нужен .NET SDK 10, ставится
     через winget). Включается сам, если в ModOrganizer.ini относительный gamePath (портативные сборки, gamePath=..\).
+
+.PARAMETER NoPapyrus
+    Не ставить компилятор Papyrus (scripts\papyrus\papyrusc.py тогда ищет PapyrusCompiler.exe из Creation Kit).
 
 .PARAMETER Yes
     Не задавать вопросов: брать значения по умолчанию и не ждать подтверждения.
@@ -54,6 +58,7 @@ param(
     [switch]$HousecarlFromSource,
     [switch]$Yes,
     [switch]$FilesOnly,
+    [switch]$NoPapyrus,
     [switch]$Uninstall
 )
 
@@ -74,6 +79,10 @@ $Pins = @{
     GhidraSha = '2c2cd776db3c1f6a097ba418922378ac3649cadd5e844a6f5f088ae628a7be67'
     JdkUrl    = 'https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.5%2B8/OpenJDK25U-jdk_x64_windows_hotspot_25.0.5_8.zip'
     JdkSha    = '636bdc13dc649ddc7d5921c5c7d23cca6e44fd19d662b45cc9c02135a6c96c42'
+    # Компилятор Papyrus с открытым кодом (MIT), github.com/russo-2025/papyrus-compiler; SHA-256 из digest релиза.
+    PapyrusTag = '2026.03.15'
+    PapyrusUrl = 'https://github.com/russo-2025/papyrus-compiler/releases/download/2026.03.15/papyrus-compiler-windows.zip'
+    PapyrusSha = '67b44c77d00a5cda986bec6af5c228a56abe6ec1fadcb4cfea5c858e6941140e'
 }
 
 # ---------------------------------------------------------------- вывод и вопросы
@@ -480,6 +489,8 @@ Say ("   houseCARL:        " + $(if ($customHousecarl) { "свой: $customHouse
                                elseif ($FromSource) { "$HousecarlVersion из исходников + фикс относительного gamePath (нужен .NET SDK 10)" }
                                else { "$HousecarlVersion -> $InstallDir\housecarl\server" }))
 if ($relativeMo2 -and -not $customHousecarl) { Say '                     (в ModOrganizer.ini относительный gamePath — релиз houseCARL его не откроет)' }
+$PapyrusDir = Join-Path $InstallDir 'papyrus-compiler'
+Say ("   Papyrus:          " + $(if ($NoPapyrus) { 'не ставить (-NoPapyrus)' } else { "papyrus-compiler $($Pins.PapyrusTag) -> $PapyrusDir" }))
 Say ("   реверс (Ghidra):  " + $(if ($WantGhidra) { $ReDir } else { 'не ставить' }))
 if ($FilesOnly) { Say '   режим -FilesOnly: переменные окружения и settings.json не трогаю' }
 else {
@@ -558,6 +569,26 @@ else {
     }
 }
 New-Item -ItemType Directory -Force (Join-Path $InstallDir 'housecarl-data') | Out-Null
+
+# ================================================================ 2b. компилятор Papyrus
+
+if ($NoPapyrus) { Step '2b. Компилятор Papyrus — пропущен (-NoPapyrus)' }
+else {
+    Step '2b. Компилятор Papyrus'
+    $papyrusExe = Join-Path $PapyrusDir 'papyrus-compiler\papyrus.exe'
+    $papyrusVersion = Join-Path $PapyrusDir 'VERSION'
+    $papyrusTag = if (Test-Path -LiteralPath $papyrusVersion) { (Get-Content -LiteralPath $papyrusVersion -Raw).Trim() } else { '' }
+    if ($papyrusTag -eq $Pins.PapyrusTag -and (Test-Path -LiteralPath $papyrusExe)) { Ok "papyrus-compiler $papyrusTag уже установлен" }
+    else {
+        $zip = Get-File $Pins.PapyrusUrl $Pins.PapyrusSha "papyrus-compiler $($Pins.PapyrusTag)"
+        if (Test-Path -LiteralPath $PapyrusDir) { Remove-Item -LiteralPath $PapyrusDir -Recurse -Force }
+        Expand-Zip $zip $PapyrusDir
+        if (-not (Test-Path -LiteralPath $papyrusExe)) { Fail "в архиве papyrus-compiler нет papyrus-compiler\papyrus.exe" }
+        Set-Content -LiteralPath $papyrusVersion -Value $Pins.PapyrusTag -Encoding ASCII
+        Ok "papyrus-compiler $($Pins.PapyrusTag) -> $PapyrusDir"
+    }
+    Say '   компиляция: python scripts\papyrus\papyrusc.py compile <.psc> -o <новый мод>\Scripts (импорты берутся из MO2)'
+}
 
 # ================================================================ 3. Ghidra
 
