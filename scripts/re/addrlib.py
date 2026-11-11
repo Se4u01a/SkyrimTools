@@ -97,9 +97,9 @@ def main():
         k = args.index("--bin")
         path = args[k + 1]
         del args[k:k + 2]
-    if not args:
-        print(__doc__)
-        return
+    if not args or "-h" in args or "--help" in args:  # before load(): help must work without the .bin
+        print(__doc__.strip())
+        sys.exit(0 if args else 2)
     version, pairs = load(path or default_bin())
     known = names()
     mode, rest = args[0], args[1:]

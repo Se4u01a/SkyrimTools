@@ -1,6 +1,6 @@
 """Does a TTF/OTF font map the given code points? Minimal cmap reader (formats 4 and 12).
 
-python font_has.py <font> [hex codepoints...]   (default: Cyrillic А, я, Ё)
+python font_has.py <font> [hex codepoints...]   (default: Cyrillic U+0410, U+044F, U+0401)
 """
 import struct
 import sys

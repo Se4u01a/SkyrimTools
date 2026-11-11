@@ -34,7 +34,7 @@ RESULTS = []
 SCRIPTS = {
     "scripts/esp/espscan.py": 2, "scripts/esp/pexdis.py": 2,
     "scripts/misc/font_has.py": 2, "scripts/misc/merge_ini.py": 2, "scripts/misc/nexus_gql.py": 2,
-    "scripts/re/addrlib.py": 0, "scripts/re/build_id_names.py": None, "scripts/re/calls_in.py": 2,
+    "scripts/re/addrlib.py": 2, "scripts/re/build_id_names.py": None, "scripts/re/calls_in.py": 2,
     "scripts/re/decomp.py": 2, "scripts/re/disasm_at.py": 2, "scripts/re/find_vcall.py": 2, "scripts/re/mcp_call.py": 2,
     "scripts/re/pdbsym.py": 2, "scripts/re/swf_as2.py": 2, "scripts/re/thread_stacks.py": None,
     "scripts/re/vtable_slot.py": 2, "scripts/agents/selftest.py": None,
@@ -99,15 +99,21 @@ def t_inventory():
 
 @check("python: --help prints the docstring, bare call prints usage")
 def t_help():
+    # As on a stranger's machine: an English console code page and nothing installed (no SKYRIM_* variables).
+    env = {k: v for k, v in os.environ.items() if not k.upper().startswith(("SKYRIM_", "HOUSECARL_", "PYTHONUTF8"))}
+    env.update(PYTHONIOENCODING="cp1252", LOCALAPPDATA=tempfile.gettempdir())
     bad = []
     for script, bare in SCRIPTS.items():
+        doc = re.match(r'\s*(?:[rRuU]?)"""(.*?)"""', open(os.path.join(REPO, script), encoding="utf-8").read(), re.S)
+        if not doc or any(ord(c) > 127 for c in doc.group(1)):
+            bad.append("%s: docstring %s" % (script, "missing" if not doc else "is not ASCII"))
         if script in NEEDS_VENV and not has_modules("capstone", "pefile"):
             continue
-        rc, out, err = py(script, "--help", timeout=30)
+        rc, out, err = py(script, "--help", timeout=30, env=env)
         if rc != 0 or "Traceback" in err or not out.strip():
             bad.append("%s --help -> %d %s" % (script, rc, err.strip().splitlines()[-1:] if err.strip() else ""))
         if bare is not None:
-            rc, out, err = py(script, timeout=30)
+            rc, out, err = py(script, timeout=30, env=env)
             if rc != bare or "Traceback" in err:
                 bad.append("%s (no args) -> %d, want %d" % (script, rc, bare))
     expect(not bad, "; ".join(bad))
