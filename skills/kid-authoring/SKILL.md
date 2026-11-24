@@ -78,7 +78,12 @@ Read what your task needs, not everything.
    `NONE`; a trailing unused section can be dropped. Set `chance` (0–100, default 100) only when you
    want less than guaranteed.
 
-6. **Ground the line.** Measure the reach before the file ships, and report the number with the call
+6. **Ground the line.** For an installed KID version that matches the houseCARL 2.2 model (4.0.6 or
+   4.1.0), use `housecarl_records` with `where=["kid reaches <complete _KID.ini line>"]` and
+   `counts_only=true`. Read the reach note for undecided records. Inspect the installed file with
+   `housecarl_layer`, `distributor=["kid"]` and `filter="<name>_KID.ini"`. For the 3.5.0 grammar
+   covered below, use a field census and compare the result with KID's log in game.
+   Measure the reach before the file ships, and report the number with the call
    that produced it rather than as a claim. The census is `housecarl_records` with `types=["WEAP"]`,
    `where=["Data.AnimationType = OneHandDagger"]` and `counts_only=true`. To let the user eyeball
    the set, drop `counts_only` and pass a `limit` — the default `summary` rows carry each match's

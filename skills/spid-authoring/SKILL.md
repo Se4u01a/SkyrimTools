@@ -120,7 +120,7 @@ are empty; every pipe before Chance is still written.
 
 ## Check the reach before you write it
 
-A SPID line is written blind unless you measure the population first. Three checks, all read-only:
+Measure the population before shipping a SPID line. These checks are read-only:
 
 1. **Size the group the filter names**, before composing: `housecarl_records` with `types`, a
    `where` predicate for the faction or keyword, and `counts_only=true` — the cheap census. A
@@ -138,28 +138,25 @@ A SPID line is written blind unless you measure the population first. Three chec
    predicates are ANDed, so dropping check 1's term counts every scaling NPC in the order instead
    of the group the line names. That is the population the re-distribution pass covers, not the
    population the line reaches — see *Verifying a distribution actually happened*.
-3. **Prove the file is the one the game reads**, after placing it: `housecarl_asset_status` with
-   `asset_paths=["<name>_DISTR.ini"]`, a Data-relative path like any other. It names the winning
-   source, every source that provides it, and whether more than one contends.
+3. **Evaluate the composed line** with `housecarl_records`,
+   `where=["spid reaches <complete _DISTR.ini line>"]` and `counts_only=true`. Report the records
+   the replay can decide and the unresolved cases in its reach note. It reads NPC templates, and
+   factors such as chance or current location can still require the running game.
+4. **Check the installed file** with `housecarl_layer`, `distributor=["spid"]` and
+   `filter="<name>_DISTR.ini"`. It reports the winning file and how its lines parse and resolve.
+   Use `housecarl_asset_status` with `paths=["<name>_DISTR.ini"]` for the provider chain.
 
-**A census is a floor.** Both counts read each record's *own* local data. An NPC that inherits its
+**A field census is a floor.** The first two counts read each record's *own* local data. An NPC that inherits its
 factions or stats from a template has that data masked on its own record, while SPID matches the
 resolved NPC (`references/grammar-core.md` §11), so a templated actor SPID reaches can go uncounted.
 Say that alongside the number rather than passing it off as the resolved population.
 
-**Stop condition.** Quote the counts you measured and no others; never state a reach you did not
-measure. **What the surface cannot do:** nothing reports the set a *composed line* reaches — SPID's
-own parse of the seven sections, trait letters and chance (issue #614) — and nothing checks that a
-drafted `_DISTR.ini` parses offline: `housecarl_skse` says outright that distributor INIs in `Data\`
-root are covered by no family, and no issue is filed for a SPID parse check.
+**Stop condition.** Report the checks you ran and any reach the replay leaves unresolved.
 
 ## Bundled-or-warn, and the version window
 
 The `references/` corpus documents SPID **7.3.0**. If a form type, filter, trait or behaviour is not
-in it, **say so — do not fabricate a plausible token.** There is no backstop on this path: no
-houseCARL tool reads a `_DISTR.ini`, and SPID skips an unparseable line, an unknown filter term or
-an unresolvable form with no error, so a guessed token yields a file that quietly distributes
-nothing. The only checks that exist are the three under *Check the reach before you write it*.
+in it, verify it against the installed SPID version. The houseCARL 2.2 replay models SPID 7.3.
 
 The window runs **both** ways. Above 7.3.0 the corpus may be behind — surface that and offer to
 re-derive. **Below 7.3.0 a documented feature may not exist yet**: `references/filters.md` marks the

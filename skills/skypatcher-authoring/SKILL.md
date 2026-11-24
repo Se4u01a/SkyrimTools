@@ -103,6 +103,7 @@ whether the INI may be installed into the live setup or only written to a workin
 ## Check before you install
 
 Prove the target set, every address, and the draft file itself before anything is placed in a mod.
+houseCARL 2.2 models SkyPatcher 8.0.1. Check version-specific tokens against the installed SkyPatcher and this corpus.
 
 - The set: `housecarl_records` with `types=`, `plugins=` and `where=` for the set the filter means to
   hit, plus `counts_only=true` for the cheap census. Record the count and the epoch stamp beside it.
@@ -124,9 +125,9 @@ and the replay warned on none of your lines.
 
 ## Check after you install
 
-Once the INI is installed, three reads prove it landed.
+Once the INI is installed, check both the file and its effect on the target records.
 
-- `housecarl_skypatcher_layer` with `filter=` the type folder or the INI filename, for the
+- `housecarl_layer` with `distributor=["skypatcher"]` and `filter=` the type folder or the INI filename, for the
   file-level verdict — whether the file is read at all, where it sorts, what it conflicts with, and
   which of its ITM findings (an intra-file dead write, a cross-INI duplicate, a no-op write) name
   your file. The first two are authoring slips to fix at the source, and a dead write hides from the
@@ -134,9 +135,8 @@ Once the INI is installed, three reads prove it landed.
 - `housecarl_records` with `formids=` a target, `source={"overlay": "skypatcher", "state": "post"}`,
   `versus={"overlay": "skypatcher", "state": "pre"}` and `project={"form": "delta"}`, for the
   before → after on that record, with the replay's warnings for the placed file's lines beside it.
-- `housecarl_skse` with `findings='config'` and `filter=` the INI filename, which resolves every
-  `Plugin.esp|FormID` the file contains to OK, PLUGIN MISSING, DANGLING or UNPARSEABLE — the machine
-  check for a truncated or wrong FormID.
+- Inspect the reference and replay diagnostics in `housecarl_layer` for that file. Use `housecarl_records`
+  with `formids=` to confirm a suspect target or operation value in the active load order.
 
 ## Never invent a token
 

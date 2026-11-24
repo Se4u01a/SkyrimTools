@@ -156,14 +156,13 @@ Then work the checks, in cost order:
    actually declares for that class. That is a declaration, not a runtime guarantee: the tool
    answers whether a pairing is plausible and healthy, never whether the DLL registers exactly
    these functions, and the absence of a token proves nothing.
-3. **The declaration itself.** `housecarl_decompile_script` with `pex=` recovers the real
+3. **The declaration itself.** `housecarl_decompile_script` with `paths=["scripts/<name>.pex"]` recovers the real
    declaration — names, types, properties, states, events and docstrings all survive. Add
    `out_path=` an absolute folder to land the `.psc` there instead of in a new mod folder, which is
    what you want when you are only reading a signature. Give each lookup its own empty folder: a
    `.psc` already at that path is refused, never overwritten, so a reused folder stops the second
-   lookup. For a class inside an archive, `housecarl_bsa_extract` with `archive=`, `out_path=` and
-   `under=` its `scripts/<name>.pex` path first (a path or glob, as `asset_status` takes), then
-   decompile the extracted path with `out_path=` a different, empty folder.
+   lookup. The selector reads the winning copy from loose files or a BSA. Use `provider=` to choose
+   a specific mod or pass the absolute path to a loose `.pex` in `paths=`.
    **Parameter defaults do not survive a decompile** — they
    never existed in the `.pex` — so a decompiled declaration answers arity and types and cannot
    answer a default.

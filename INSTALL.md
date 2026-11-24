@@ -39,8 +39,8 @@ Docker не нужен: всё работает прямо в Windows, пото�
 4. Открой Claude Code заново и проверь:
    - `/plugin` — включён `skyrim-tools`;
    - `/mcp` — один сервер `skyrim-gateway` в состоянии connected. Он запускает houseCARL, Ghidra и SkyLink по первому
-     обращению; какой из них установлен и работает, показывает его инструмент `gateway_status`. exe шлюза
-     собирается при первом старте, если установлен Go (https://go.dev/dl/); без Go работает только houseCARL.
+     обращению. Состояние серверов показывает `gateway_status`. Готовый EXE шлюза установщик скачивает из релиза
+     той же версии и сверяет SHA-256. Go нужен только для самостоятельной сборки.
 
 Проверка в деле: «какой мод побеждает в записи Iron Sword?» или «напиши SPID, который выдаёт всем бандитам зелье здоровья».
 
@@ -90,6 +90,7 @@ setup.cmd -Uninstall                        убрать плагин и пер�
 
 | Что | Куда |
 |---|---|
+| `skyrim-gateway.exe` для Windows x64 (SHA-256 проверяется) | `%LOCALAPPDATA%\SkyrimTools\gateway` |
 | houseCARL (сервер из [релиза](https://github.com/Avick3110/houseCARL/releases), SHA-256 проверяется) | `%LOCALAPPDATA%\SkyrimTools\housecarl\server` |
 | настройки houseCARL (сохранённый экземпляр MO2) | `%LOCALAPPDATA%\SkyrimTools\housecarl-data` |
 | компилятор Papyrus [papyrus-compiler](https://github.com/russo-2025/papyrus-compiler) (MIT, ~1 МБ, SHA-256 проверяется; без `-NoPapyrus`) | `%LOCALAPPDATA%\SkyrimTools\papyrus-compiler` |
@@ -121,7 +122,7 @@ setup.cmd
 
 - **`housecarl` failed в `/mcp`.** Обычно нет .NET Runtime 10 x64: поставь его с
   https://dotnet.microsoft.com/download/dotnet/10.0 (именно x64). Если ругается «houseCARL not found», запусти `setup.cmd` ещё раз.
-- **Портативная сборка MO2 (`gamePath=..\` в `ModOrganizer.ini`).** Релиз houseCARL v2.1.2 такой путь не понимает
+- **Портативная сборка MO2 (`gamePath=..\` в `ModOrganizer.ini`).** Релиз houseCARL 2.2.0 такой путь не понимает
   (пишет «the game Data folder is missing»). Установщик замечает это сам и собирает houseCARL из исходников того же
   тега с исправлением: ставит .NET SDK 10 через winget, сборка занимает около минуты.
 - **Переменные не подхватились.** Закрой все окна Claude Code и терминалов: новые переменные видят только процессы,

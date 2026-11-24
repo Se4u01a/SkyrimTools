@@ -5,6 +5,7 @@
 .DESCRIPTION
     Что делает, по шагам (перед началом показывает план и ждёт Enter):
       1. .NET Runtime 10 (x64) — нужен houseCARL; ставится через winget, если его нет.
+      skyrim-gateway — готовый EXE Windows x64 из релиза SkyrimTools, с проверкой SHA-256 и версии.
       2. houseCARL — MCP-сервер для load order / записей / Papyrus / Nexus. Скачивается релиз с GitHub
          (SHA-256 сверяется), в папку установки кладётся только сервер (скиллы уже есть в этом репо).
       2b. Компилятор Papyrus (.psc -> .pex) с открытым кодом, ~1 МБ, SHA-256 сверяется; -NoPapyrus — не ставить.
@@ -27,7 +28,7 @@
     заданные свои пути (HOUSECARL_EXE, SKYRIM_RE_DIR) игнорируются и всё ставится сюда.
 
 .PARAMETER HousecarlVersion
-    Тег релиза houseCARL (по умолчанию проверенный v2.1.2) или latest.
+    Тег релиза houseCARL (по умолчанию v2.2.0) или latest.
 
 .PARAMETER HousecarlFromSource
     Собрать houseCARL из исходников того же тега с фиксом относительного gamePath (нужен .NET SDK 10, ставится
@@ -60,7 +61,7 @@ param(
     [switch]$Ghidra,
     [switch]$NoGhidra,
     [string]$InstallDir,
-    [string]$HousecarlVersion = 'v2.1.2',
+    [string]$HousecarlVersion = 'v2.2.0',
     [switch]$HousecarlFromSource,
     [switch]$Yes,
     [switch]$FilesOnly,
@@ -178,6 +179,64 @@ function Expand-Zip([string]$Zip, [string]$Dest) {
     if ($LASTEXITCODE -ne 0) { Fail "не удалось распаковать $Zip" }
 }
 
+function Stop-GatewayForUpdate([string]$Gateway) {
+    if (-not (Test-Path -LiteralPath $Gateway -PathType Leaf)) { return }
+    $raw = Invoke-Native { & $Gateway status 2>$null }
+    if ($LASTEXITCODE -ne 0) { return }
+    $status = ($raw -join "`n") | ConvertFrom-Json
+    # В sessions учитывается и эта диагностическая сессия.
+    if ($status.sessions -gt 1) { Fail 'skyrim-gateway используется. Закрой все MCP-клиенты и запусти setup ещё раз.' }
+    $daemon = Get-Process -Id $status.pid -ErrorAction SilentlyContinue
+    if (-not $daemon) { return }
+    Invoke-Native { & $Gateway stop } | Out-Null
+    if ($LASTEXITCODE -ne 0 -or -not $daemon.WaitForExit(15000)) {
+        Fail 'не удалось остановить skyrim-gateway. Запусти scripts\run_gateway.cmd stop и повтори setup.'
+    }
+}
+
+function Install-Gateway([string]$Gateway, [string]$Tag) {
+    if (Test-Path -LiteralPath $Gateway -PathType Leaf) {
+        $installed = Invoke-Native { & $Gateway version 2>$null }
+        if ($LASTEXITCODE -eq 0 -and $installed -eq "skyrim-gateway $Tag") {
+            Ok "skyrim-gateway $Tag уже установлен"
+            return
+        }
+    }
+    $repoUrl = 'https://api.github.com/repos/Se4u01a/SkyrimTools'
+    try { $release = Invoke-RestMethod -Uri "$repoUrl/releases/tags/$Tag" -Headers @{ 'User-Agent' = 'SkyrimTools-setup' } }
+    catch {
+        if ($_.Exception.Response.StatusCode -eq 404) {
+            Warn "релиз SkyrimTools $Tag ещё не опубликован. При необходимости собери шлюз по gateway/README.md."
+            return
+        }
+        Fail "не удалось получить релиз SkyrimTools $Tag : $($_.Exception.Message)"
+    }
+    $name = "skyrim-gateway-$Tag-windows-amd64.exe"
+    $asset = $release.assets | Where-Object name -eq $name | Select-Object -First 1
+    if (-not $asset -or $asset.digest -notmatch '^sha256:[0-9a-f]{64}$') {
+        Fail "в релизе SkyrimTools $Tag отсутствует $name с SHA-256"
+    }
+    $url = "https://github.com/Se4u01a/SkyrimTools/releases/download/$Tag/$name"
+    $download = Get-File $url $asset.digest.Substring(7) "skyrim-gateway $Tag"
+    $version = Invoke-Native { & $download version }
+    if ($LASTEXITCODE -ne 0 -or $version -ne "skyrim-gateway $Tag") { Fail "версия скачанного шлюза не совпадает с $Tag" }
+
+    New-Item -ItemType Directory -Force (Split-Path -Parent $Gateway) | Out-Null
+    $stage = "$Gateway.$([guid]::NewGuid().ToString('N')).tmp"
+    $backup = "$stage.bak"
+    try {
+        Copy-Item -LiteralPath $download -Destination $stage
+        Stop-GatewayForUpdate $download
+        if (Test-Path -LiteralPath $Gateway) { [IO.File]::Replace($stage, $Gateway, $backup) }
+        else { [IO.File]::Move($stage, $Gateway) }
+    }
+    finally {
+        if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Force }
+    }
+    if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Force }
+    Ok "skyrim-gateway $Tag -> $Gateway"
+}
+
 # ---------------------------------------------------------------- поиск MO2 и игры
 
 function Read-Mo2Value([string]$Mo2, [string]$Key) {
@@ -190,7 +249,7 @@ function Read-Mo2Value([string]$Mo2, [string]$Key) {
     if ($value) { $value } else { $null }
 }
 
-# Портативные сборки пишут gamePath=..\ — houseCARL до v2.1.2 включительно такой путь не понимает.
+# Портативные сборки пишут gamePath=..\ — релиз houseCARL 2.2.0 не разрешает такой путь от папки MO2.
 function Test-Mo2Relative([string]$Mo2) {
     foreach ($key in 'gamePath', 'base_directory') {
         $v = Read-Mo2Value $Mo2 $key
@@ -277,11 +336,13 @@ function Build-HousecarlFromSource([string]$Tag) {
     $file = Join-Path $root 'src\housecarl-core\Mo2Instance.cs'
     $text = [IO.File]::ReadAllText($file)
     $gameLine = 'var gamePath = CleanValue(FindValue(lines, "gamePath"));'
-    $baseLine = 'var baseDir  = CleanValue(FindValue(lines, "base_directory"));'
+    $oldBase = 'var baseDir  = CleanValue(FindValue(lines, "base_directory"));'
+    $newBase = 'var basePath = baseSet ? CleanValue(baseRaw) ?? "" : instanceDir;'
     if ($text.Contains('Anchored(')) { Ok 'фикс относительного gamePath уже есть в исходниках' }
-    elseif ($text.Contains($gameLine) -and $text.Contains($baseLine)) {
+    elseif ($text.Contains($gameLine) -and ($text.Contains($oldBase) -or $text.Contains($newBase))) {
         $text = $text.Replace($gameLine, 'var gamePath = Anchored(instanceDir, CleanValue(FindValue(lines, "gamePath")));')
-        $text = $text.Replace($baseLine, 'var baseDir  = Anchored(instanceDir, CleanValue(FindValue(lines, "base_directory")));')
+        $text = $text.Replace($oldBase, 'var baseDir  = Anchored(instanceDir, CleanValue(FindValue(lines, "base_directory")));')
+        $text = $text.Replace($newBase, 'var basePath = baseSet ? Anchored(instanceDir, CleanValue(baseRaw)) ?? "" : instanceDir;')
         $end = $text.LastIndexOf('}')
         $method = "`n    // SkyrimTools setup: MO2 resolves a relative gamePath / base_directory (portable lists: ..\) against the instance folder.`n" +
                   "    static string? Anchored(string instanceDir, string? path)`n" +
@@ -449,7 +510,8 @@ if ($Uninstall) {
     }
     foreach ($n in $EnvNames) { if (Get-UserEnv $n) { [Environment]::SetEnvironmentVariable($n, $null, 'User'); Ok "переменная $n удалена" } }
     if ($home_ -and (Test-Path -LiteralPath $home_)) {
-        if (AskYesNo "Удалить папку установки $home_ (houseCARL, Ghidra, проекты Ghidra)?" $false) {
+        if (AskYesNo "Удалить папку установки $home_ (шлюз, houseCARL, Ghidra, проекты Ghidra)?" $false) {
+            Stop-GatewayForUpdate (Join-Path $home_ 'gateway\skyrim-gateway.exe')
             Remove-Item -LiteralPath $home_ -Recurse -Force; Ok "$home_ удалена"
         }
         else { Say "   папка оставлена: $home_" }
@@ -497,9 +559,12 @@ elseif (-not (Test-Path -LiteralPath (Join-Path $Mo2Dir 'ModOrganizer.ini'))) { 
 $GameDir = Find-GameDir $Mo2Dir
 $gameVersion = if ($GameDir) { (Get-Item -LiteralPath (Join-Path $GameDir 'SkyrimSE.exe')).VersionInfo.FileVersion } else { $null }
 
-# houseCARL: релиз или сборка из исходников (релизы до v2.1.2 включительно не открывают экземпляр с gamePath=..\)
+# houseCARL: релиз или сборка из исходников с поддержкой относительных путей MO2.
 $relativeMo2 = [bool]($Mo2Dir -and (Test-Mo2Relative $Mo2Dir))
 $FromSource = -not $customHousecarl -and ($HousecarlFromSource -or $relativeMo2)
+$gatewayExe = Join-Path $InstallDir 'gateway\skyrim-gateway.exe'
+$gatewayTag = 'v' + (Get-Content -LiteralPath (Join-Path $Repo '.claude-plugin\plugin.json') -Raw | ConvertFrom-Json).version
+if ($gatewayTag -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { Fail "некорректная версия SkyrimTools: $gatewayTag" }
 
 # Ghidra
 $reInstalled = Test-Path -LiteralPath (Join-Path $ReDir 'venv\Scripts\pyghidra-mcp.exe')
@@ -520,6 +585,7 @@ Say "   папка установки:  $InstallDir"
 Say ("   MO2:              " + $(if ($Mo2Dir) { $Mo2Dir } else { '(не задан — houseCARL спросит при первом запуске)' }))
 Say ("   игра:             " + $(if ($GameDir) { "$GameDir (SkyrimSE.exe $gameVersion)" } else { '(не найдена)' }))
 Say ("   .NET Runtime 10:  " + $(if (Test-DotNet10) { 'уже есть' } else { 'поставить через winget' }))
+Say "   skyrim-gateway:   $gatewayTag -> $gatewayExe"
 Say ("   houseCARL:        " + $(if ($customHousecarl) { "свой: $customHousecarl" }
                                elseif ($FromSource) { "$HousecarlVersion из исходников + фикс относительного gamePath (нужен .NET SDK 10)" }
                                else { "$HousecarlVersion -> $InstallDir\housecarl\server" }))
@@ -564,6 +630,9 @@ else { Warn 'нет winget. Поставь .NET Runtime 10 x64 руками: htt
 
 # ================================================================ 2. houseCARL
 
+Step 'skyrim-gateway (Windows x64)'
+Install-Gateway $gatewayExe $gatewayTag
+
 Step '2. houseCARL'
 $hcRoot = Join-Path $InstallDir 'housecarl'
 $hcExe = Join-Path $hcRoot 'server\housecarl-mcp.exe'
@@ -579,6 +648,7 @@ else {
     $installedTag = if (Test-Path -LiteralPath $hcVersionFile) { (Get-Content -LiteralPath $hcVersionFile -Raw).Trim() } else { '' }
     if ($installedTag -eq $wanted -and (Test-Path -LiteralPath $hcExe)) { Ok "houseCARL $wanted уже установлен" }
     else {
+        Stop-GatewayForUpdate $gatewayExe
         $running = Get-Process -Name 'housecarl-mcp' -ErrorAction SilentlyContinue |
                    Where-Object { $_.Path -and $_.Path.StartsWith($hcRoot, [StringComparison]::OrdinalIgnoreCase) }
         if ($running) {
@@ -607,6 +677,8 @@ else {
             if (Test-Path -LiteralPath (Join-Path $pkg $f)) { Copy-Item -LiteralPath (Join-Path $pkg $f) -Destination $hcRoot -Force }
         }
         Set-Content -LiteralPath $hcVersionFile -Value $wanted -Encoding ASCII
+        $schemaCache = Join-Path $InstallDir 'gateway\schemas\housecarl.json'
+        if (Test-Path -LiteralPath $schemaCache -PathType Leaf) { Remove-Item -LiteralPath $schemaCache -Force }
         Ok "houseCARL $wanted -> $hcRoot\server"
     }
 }

@@ -31,7 +31,19 @@ clients can use the backend `.cmd` launchers directly.
 Not in phase 0: the curated core API, `gateway_discover` / `enable` / `call`, permission classes and plan/apply,
 `setup`/`doctor`/`connect` in the exe. See the design document.
 
-## Build and run
+## Install and run
+
+`setup.cmd` downloads the Windows x64 release binary into `%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe`,
+checks its SHA-256 against the GitHub release metadata, and verifies the version printed by the exe. GitHub Releases
+also publishes a `.sha256` file beside `skyrim-gateway-v<version>-windows-amd64.exe` for manual downloads.
+
+```powershell
+.\scripts\run_gateway.cmd version
+.\scripts\run_gateway.cmd status
+.\scripts\run_gateway.cmd stop
+```
+
+## Build from source
 
 ```powershell
 cd gateway
@@ -53,9 +65,8 @@ see `internal/backend.Spec`), `--idle-exit DURATION`.
 
 ### In Claude Code
 
-The plugin's `.mcp.json` starts `scripts\run_gateway.cmd`, which runs the first exe it finds
-(`SKYRIM_GATEWAY_EXE`, `<repo>\gateway\bin\`, `%SKYRIM_TOOLS_HOME%\gateway\`), builds it with Go on the first start
-when there is none, and without Go falls back to houseCARL alone (warning on stderr). After switching, run
+The plugin's `.mcp.json` starts `scripts\run_gateway.cmd`. The launcher prefers `SKYRIM_GATEWAY_EXE`, then the
+installed release, then a repo build. Source checkouts can build on first launch if Go is available. After updating, run
 `/plugin marketplace update skyrim-tools` and start a new session: an old session's own `pyghidra-mcp` keeps the
 Ghidra project locked until it ends (`gateway_status` shows `locked`).
 

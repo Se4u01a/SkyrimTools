@@ -40,7 +40,7 @@ except the reverse-engineering scripts still works.
 | `skills/` | 15 agent skills, each `<name>/SKILL.md` + `<name>/references/`; index in `skills/README.md` |
 | `.mcp.json` | MCP servers for Claude Code (`${CLAUDE_PLUGIN_ROOT}` is Claude-only) |
 | `.claude-plugin/` | Claude Code plugin + local marketplace manifests |
-| `gateway/` | `skyrim-gateway`, the Go MCP facade (phase 0: one shared daemon proxying houseCARL, pyghidra-mcp, SkyLink); opt-in, see `gateway/README.md` |
+| `gateway/` | `skyrim-gateway`, a shared MCP daemon for houseCARL, pyghidra-mcp and SkyLink. Setup installs the Windows x64 release binary. See `gateway/README.md`. |
 | `scripts/agents/` | `doctor.ps1`, `connect.ps1`, `selftest.py` — install check, MCP/skill wiring for any agent, self-test |
 | `scripts/run_skylink.cmd` | launcher for the optional `skylink` MCP server (SkyLink AI, the running game) |
 | `.github/workflows/selftest.yml` | CI: the static self-test on `windows-latest` for every push and pull request |
@@ -51,7 +51,7 @@ except the reverse-engineering scripts still works.
 | `scripts/papyrus/` | `papyrusc.py` — compile `.psc` with the MO2 load order's imports (open-source compiler or the CK's) |
 | `scripts/re/` | Address Library, thread snapshots, `.pdb` symbols, disassembly, vtables, Ghidra launchers |
 | `data/se_id_names.tsv` | REL::ID → name table used by the RE scripts and skills |
-| `setup.cmd` / `setup.ps1` | installer / upgrader (environment, houseCARL, optional RE workspace) |
+| `setup.cmd` / `setup.ps1` | installer and upgrader (environment, gateway, houseCARL, optional RE workspace) |
 | `requirements-re.txt` | pinned Python packages of the RE venv |
 | `CONTRIBUTING.md` | house rules for changing this repo (EOLs, paths, adding a skill or script) |
 | `CHANGELOG.md` | what changed in each tagged version (`plugin.json` carries the number) |
@@ -74,6 +74,7 @@ Never edit an existing mod, `plugins.txt` or `ModOrganizer.ini` unless the user 
 | `PAPYRUS_COMPILER_DIR` | papyrus-compiler folder override (optional) | `%SKYRIM_TOOLS_HOME%\papyrus-compiler` (setup.cmd) |
 | `SKYRIM_DOCUMENTS_DIR` | the game folder under `Documents\My Games` (e.g. `...\Skyrim Special Edition`) for the log and save scripts (optional) | found per game folder, SE first |
 | `SKYLINK_EXE` | SkyLink AI server executable or .NET DLL override (optional) | `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.dll` |
+| `SKYRIM_GATEWAY_EXE` | Gateway executable override (optional) | `%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe` |
 
 Syntax by shell: cmd `%VAR%`, PowerShell `$env:VAR`, Git Bash `$VAR`. **An unset variable means that part is not
 installed** — say so and ask for the path; do not guess a `D:\...` path from an example in the docs.
@@ -94,8 +95,8 @@ same names, plus `gateway_status` / `gateway_restart`; other clients wire the th
 houseCARL tool names are `housecarl_<tool>` on every host — `housecarl_records`, `housecarl_asset_status`,
 `housecarl_apply`, `housecarl_create`, `housecarl_forward`, `housecarl_check`, `housecarl_compile_script`,
 `housecarl_decompile_script`, `housecarl_bsa_extract`, `housecarl_skse`, `housecarl_load_order_status`,
-`housecarl_skypatcher_layer`, `housecarl_set_mo2_instance`. Start from `housecarl_load_order_status` to see which
-instance houseCARL resolved; the full argument surface is in the server's own `tools/list` and in the skills.
+`housecarl_layer`, `housecarl_set_mo2_instance`. Start from `housecarl_load_order_status` to see which
+instance houseCARL resolved. The examples target houseCARL 2.2. `tools/list` provides the full input schemas.
 `pyghidra-mcp` starts a JVM: allow 20–60 s for the first connection, and the first analysis of `SkyrimSE.exe` takes
 tens of minutes (it is cached in the Ghidra project afterwards).
 

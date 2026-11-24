@@ -5,6 +5,8 @@ name: selftest
 
 on:
   push:
+    branches: ['**']
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -26,6 +28,25 @@ jobs:
           python -m pip install --disable-pip-version-check $pins
       - name: selftest
         run: python scripts/agents/selftest.py -v
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check houseCARL 2.2 MCP schema against the skills
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'housecarl-schema'
+          New-Item -ItemType Directory -Path $root | Out-Null
+          $zip = Join-Path $root 'houseCARL-2.2.0.zip'
+          curl.exe --fail --silent --show-error --location --retry 3 -o $zip https://github.com/Avick3110/houseCARL/releases/download/v2.2.0/houseCARL-2.2.0.zip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $sha = '677c0c2eadedc4c55135fcb5cf1afe5a6efe5a5f2e27b2c65d0a42e43e4dab20'
+          if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ne $sha) { throw 'Unexpected houseCARL 2.2.0 checksum' }
+          Expand-Archive -LiteralPath $zip -DestinationPath $root
+          $server = Get-ChildItem -LiteralPath $root -Recurse -Filter housecarl-mcp.exe | Select-Object -First 1
+          if (-not $server) { throw 'Missing housecarl-mcp.exe in the release archive' }
+          $env:HOUSECARL_EXE = $server.FullName
+          $env:HOUSECARL_DATA_DIR = Join-Path $root 'data'
+          python scripts/agents/selftest.py --live -k 'houseCARL schema'
 
   gateway:
     runs-on: windows-latest
@@ -49,3 +70,61 @@ jobs:
         run: go test -count=1 ./...
       - name: build
         run: go build -trimpath -o bin/skyrim-gateway.exe ./cmd/skyrim-gateway
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [selftest, gateway]
+    runs-on: windows-latest
+    concurrency:
+      group: release-${{ github.ref }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: gateway/go.mod
+          cache-dependency-path: gateway/go.sum
+      - name: Build and publish the Windows x64 gateway
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = (Get-Content .claude-plugin/plugin.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne "v$version" -or $tag -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Tag must match the plugin version' }
+          $section = (Get-Content CHANGELOG.md -Raw) -split '(?m)^## ' |
+            Where-Object { $_ -match ('^' + [regex]::Escape($version) + '(?:[ \r\n]|$)') } | Select-Object -First 1
+          if (-not $section) { throw "Missing changelog section for $version" }
+          $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          ($section -split '\r?\n', 2)[1].Trim() | Set-Content -LiteralPath $notes -Encoding utf8
+
+          $name = "skyrim-gateway-$tag-windows-amd64.exe"
+          $exe = Join-Path $env:RUNNER_TEMP $name
+          Push-Location gateway
+          try {
+            go build -trimpath -ldflags "-X main.version=$tag" -o $exe ./cmd/skyrim-gateway
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally { Pop-Location }
+          if ((& $exe version) -ne "skyrim-gateway $tag" -or $LASTEXITCODE -ne 0) { throw 'Built gateway reports the wrong version' }
+          $sha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  $name" | Set-Content -LiteralPath "$exe.sha256" -Encoding ascii
+
+          $existing = gh release view $tag --repo $env:GITHUB_REPOSITORY --json isDraft,assets 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag $exe "$exe.sha256" --repo $env:GITHUB_REPOSITORY --verify-tag --title "SkyrimTools $tag" --notes-file $notes
+            exit $LASTEXITCODE
+          }
+          $release = $existing | ConvertFrom-Json
+          if (-not $release.isDraft) {
+            if ($name -notin $release.assets.name -or "$name.sha256" -notin $release.assets.name) {
+              throw "Published release $tag is missing the gateway or its checksum"
+            }
+            exit 0
+          }
+          gh release upload $tag $exe "$exe.sha256" --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release edit $tag --repo $env:GITHUB_REPOSITORY --draft=false

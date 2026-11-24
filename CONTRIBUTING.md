@@ -55,6 +55,8 @@ That is the bar for a change. The agent-facing guide is [AGENTS.md](AGENTS.md); 
 same on `windows-latest` for every push. `--live` adds the real data on this machine (game plugins, MO2 `.pex`/`.swf`,
 Address Library, RE venv, `.pdb` names, the houseCARL launcher, `doctor.ps1`), `--ghidra` the pyghidra-mcp launcher,
 `--net` a Nexus query. Run it before each commit, and `--live` whenever a script or launcher changed.
+CI also downloads the pinned houseCARL release and runs `python scripts/agents/selftest.py --live -k "houseCARL schema"`.
+When documenting new houseCARL parameters, update `HOUSECARL_ARGUMENTS` in the self-test and check the MCP `tools/list` schema.
 
 ## Changing the installer
 
@@ -66,7 +68,8 @@ current, and bump `requirements-re.txt` only with a matching change to the `set_
 ## Releases
 
 Bump `version` in `.claude-plugin/plugin.json`, add the section to `CHANGELOG.md` (New / Fixed, what was verified),
-commit, tag `vX.Y.Z` on that commit and push the tag; the GitHub release reuses the CHANGELOG section as its notes.
+commit, tag `vX.Y.Z` on that commit and push the tag. After the Windows tests pass, GitHub Actions stamps the tag into
+the Windows x64 gateway and publishes it with a `.sha256` file. The release uses the matching CHANGELOG section as its notes.
 
 ## Commits
 

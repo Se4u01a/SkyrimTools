@@ -3,21 +3,19 @@
 Versions follow `.claude-plugin/plugin.json`; each has a git tag `vX.Y.Z`. Upgrade: `git pull`, run `setup.cmd`
 again, then in Claude Code `/plugin marketplace update skyrim-tools` and restart the session.
 
-## Unreleased
+## 1.5.0 — 2026-11-24
 
 ### New
 - **skyrim-gateway (phase 0)**, `gateway/` (Go): the plugin's `.mcp.json` now starts one server,
   `scripts\run_gateway.cmd`, instead of three. A per-user daemon shares one houseCARL, one Ghidra JVM and one
   SkyLink connection between all sessions, starts each on first use from a cached schema, stops it when idle,
   restarts it after a crash and answers with structured errors (`NOT_INSTALLED`, `BACKEND_LOCKED`,
-  `GAME_NOT_RUNNING`, ...). Tool names are unchanged. The exe is built on first start when Go is installed; without
-  Go only houseCARL is available. Design: `docs/design/gateway.md`.
+  `GAME_NOT_RUNNING`, ...). Setup downloads the versioned Windows x64 exe from the matching SkyrimTools release
+  and verifies its SHA-256. The release includes a checksum file for manual downloads. Design: `docs/design/gateway.md`.
 - **Live game bridge (optional).** `setup.cmd -SkyLink` installs [SkyLink AI](https://github.com/jarvann/SkryimMCM)
-  v1.0.0 (MIT, SHA-256 pinned): the MCP server `skylink` (`scripts\run_skylink.cmd`) into
-  `%SKYRIM_TOOLS_HOME%\skylink`, its SKSE plugin into a NEW MO2 mod `SkyLink AI` that the user enables. 87 tools
-  read (and on request change) the running game. Skill `skyrim-live-game`: reads freely, writes only when asked; also
-  covers DevBench. The DLL exports `SKSEPlugin_Query`, so SKSE 1.5.97 accepts it; upstream documents AE only, and
-  nothing of it has been tested in game here.
+  v1.5.0 (SHA-256 pinned): the MCP server `skylink` into `%SKYRIM_TOOLS_HOME%\skylink` and two SKSE DLLs into the
+  `SkyLink AI` mod that the user enables in MO2. Upstream lists SE 1.5.97 and AE support. The MCP handshake was checked
+  outside the game.
 - **Log triage** (`scripts\logs\`): `crash_triage.py` (CrashLogger / trainwreck dumps, incl. `SKSE\Crashlogs`, ranked
   signatures, `--known` rulings), `papyrus_triage.py` (Papyrus log error shapes by script), `skse_load_status.py` (what
   SKSE did with every DLL), `mirror_logs.py` (append-only copy before the next launch rotates them).
@@ -29,6 +27,12 @@ again, then in Claude Code `/plugin marketplace update skyrim-tools` and restart
 - The scripts and the knowledge are adapted from
   [skyrim-ai-assistant-toolkit](https://github.com/WingedGuardian/skyrim-ai-assistant-toolkit) (MIT); see
   `THIRD_PARTY_NOTICES.md`.
+
+### Fixed
+
+- Setup defaults to houseCARL 2.2.0 and retains the relative-path fix for portable MO2 instances. Updated skills use
+  `housecarl_layer`, the shared file selectors, and SPID/KID reach queries. CI checks the documented tool names and
+  input parameters against `tools/list` from the official 2.2.0 binary.
 
 ## 1.4.0 — 2026-11-11
 

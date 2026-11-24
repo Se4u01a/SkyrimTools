@@ -149,7 +149,7 @@
 Честная граница: это ограждение от случайной записи и лог аудита, а не защита от агента, который решил обойти правила (он может вызвать бэкенд в обход фасада). Аудит: каждая запись — строка JSON в `%SKYRIM_TOOLS_HOME%\gateway\audit.jsonl` (время, сессия, инструмент, аргументы без содержимого файлов, результат).
 
 Статическая классификация houseCARL — **проверить по его коду и `tools/list` при реализации**. Предварительно:
-- `read`: `records`, `check`, `asset_status`, `load_order_status`, `skse`, `skypatcher_layer`, `bsa_list`, `nif_inspect`, `decompile_script`, `nexus_*`, `update_status`;
+- `read`: `records`, `check`, `asset_status`, `load_order_status`, `skse`, `layer`, `bsa_list`, `nif_inspect`, `decompile_script`, `nexus_*`, `update_status`;
 - `write-mo2`: `apply`, `create`, `create_plugin`, `copy`, `forward`, `remove`, `place`, `merge_plugins`, `compact_plugin`, `write_seq`, `nif_set`, `bsa_extract`, `bsa_repack`, `compile_script`, `set_mo2_instance`, `set_tool_path`.
 
 SkyLink: `read`/`write-game`/`save` — по таблице из `skills/skyrim-live-game/SKILL.md`.

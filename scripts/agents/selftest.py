@@ -801,6 +801,7 @@ def mcp_probe(launcher, timeout, args=(), env=None):
         send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
             "protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "selftest", "version": "0"}}})
         listed, deadline = False, time.time() + timeout
+        tools, cursors, request_id = [], set(), 2
         while time.time() < deadline:
             msgs = [json.loads(l) for l in list(lines) if l.strip().startswith(b"{")]
             if not listed and any(m.get("id") == 1 for m in msgs):
@@ -808,21 +809,75 @@ def mcp_probe(launcher, timeout, args=(), env=None):
                 send({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
                 listed = True
             for m in msgs:
-                if m.get("id") == 2:
-                    return [t["name"] for t in m.get("result", {}).get("tools", [])]
+                if m.get("id") != request_id:
+                    continue
+                expect("result" in m, "tools/list failed: %s" % m.get("error"))
+                result = m["result"]
+                tools.extend(result["tools"])
+                cursor = result.get("nextCursor")
+                if not cursor:
+                    return tools
+                expect(cursor not in cursors, "tools/list repeated a cursor")
+                cursors.add(cursor)
+                request_id += 1
+                send({"jsonrpc": "2.0", "id": request_id, "method": "tools/list", "params": {"cursor": cursor}})
             if p.poll() is not None:
                 break
             time.sleep(0.3)
         tail = b"".join(err).decode("utf-8", "replace").strip().splitlines()[-3:]
         raise AssertionError("no tools/list answer (exit %s): %s" % (p.poll(), " | ".join(tail)))
     finally:
-        p.kill()
+        p.stdin.close()
+        try:
+            p.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait()
 
 
-@check("live MCP: houseCARL launcher answers initialize + tools/list")
+# Names are collected from the Markdown. These are the input properties the workflows rely on.
+HOUSECARL_ARGUMENTS = {
+    "housecarl_apply": "ops into",
+    "housecarl_asset_status": "paths under formids provider exclude links walk records to_file limit offset max_chars",
+    "housecarl_bsa_extract": "archive out_path under",
+    "housecarl_check": "plugins exclude formids",
+    "housecarl_compile_script": "script import_dirs out_path",
+    "housecarl_compact_plugin": "source esl",
+    "housecarl_create": "records",
+    "housecarl_decompile_script": "paths under provider exclude out_path",
+    "housecarl_forward": "formids source into",
+    "housecarl_layer": "distributor filter formids plugins",
+    "housecarl_load_order_status": "filter",
+    "housecarl_records": "formids types plugins where source versus project walk counts_only to_file limit",
+    "housecarl_set_mo2_instance": "path",
+    "housecarl_set_tool_path": "tool path",
+    "housecarl_skse": "findings filter",
+}
+
+
+def validate_housecarl_tools(tools):
+    documented = set(HOUSECARL_ARGUMENTS)
+    for path in [os.path.join(REPO, "AGENTS.md")] + glob.glob(os.path.join(REPO, "skills", "**", "*.md"), recursive=True):
+        with open(path, encoding="utf-8") as doc:
+            documented.update(re.findall(r"\bhousecarl_[a-z0-9_]+\b", doc.read()))
+    schemas = {tool["name"]: tool["inputSchema"] for tool in tools}
+    errors = [f"missing tool {name}" for name in sorted(documented - schemas.keys())]
+    for name, arguments in HOUSECARL_ARGUMENTS.items():
+        if name not in schemas:
+            continue
+        properties = schemas[name].get("properties", {})
+        for argument in arguments.split():
+            if argument not in properties:
+                errors.append(f"missing parameter {name}.{argument}")
+            elif properties[argument].get("description", "").startswith("Retired:"):
+                errors.append(f"retired parameter {name}.{argument}")
+    expect(not errors, "; ".join(errors))
+
+
+@check("live MCP: houseCARL schema matches the documented tools and parameters")
 def t_live_housecarl():
     tools = mcp_probe(os.path.join(REPO, "scripts", "run_housecarl.cmd"), 60)
-    expect(len(tools) >= 20 and "housecarl_records" in tools, "tools: %s" % tools)
+    validate_housecarl_tools(tools)
 
 
 @check("live MCP: pyghidra-mcp launcher answers initialize + tools/list")
@@ -831,23 +886,28 @@ def t_live_ghidra():
         raise Skip("pass --ghidra (starts a JVM, 20-60 s)")
     re_dir()
     tools = mcp_probe(os.path.join(REPO, "scripts", "re", "run_ghidra_mcp.cmd"), 240)
-    expect("decompile_function" in tools, "tools: %s" % tools)
+    names = [t["name"] for t in tools]
+    expect("decompile_function" in names, "tools: %s" % names)
 
 
 @check("live MCP: skyrim-gateway launcher (.mcp.json) fronts houseCARL with the original tool names")
 def t_live_gateway():
-    exe = os.path.join(REPO, "gateway", "bin", "skyrim-gateway.exe")
-    have_go = shutil.which("go") is not None
-    if not os.path.isfile(exe) and not have_go:
-        raise Skip("no gateway\\bin\\skyrim-gateway.exe and no Go to build it (the launcher falls back to houseCARL)")
-    pipe_args = ["--pipe", "skyrim-gateway-selftest"]  # its own daemon: never the one a client session is using
+    from uuid import uuid4
+
+    launcher = os.path.join(REPO, "scripts", "run_gateway.cmd")
+    env = user_env()
+    rc, _, _ = run(["cmd.exe", "/c", launcher, "--check-install"], env=env)
+    if rc and shutil.which("go", path=env.get("PATH")) is None:
+        raise Skip("gateway binary missing: run setup.cmd")
+    pipe_args = ["--pipe", "skyrim-gateway-selftest-" + uuid4().hex]
     try:
-        tools = mcp_probe(os.path.join(REPO, "scripts", "run_gateway.cmd"), 180, pipe_args)
+        tools = [t["name"] for t in mcp_probe(launcher, 180, pipe_args, env=env)]
         expect("gateway_status" in tools and "housecarl_records" in tools,
                "tools: %s" % sorted(tools)[:40])
     finally:
-        if os.path.isfile(exe):
-            run([exe, "stop"] + pipe_args, timeout=30)
+        rc, path, _ = run(["cmd.exe", "/c", launcher, "--check-install"], env=env)
+        if rc == 0:
+            run([path.strip().strip('"'), "stop"] + pipe_args, timeout=30, env=env)
 
 
 @check("live MCP: SkyLink AI launcher answers initialize + tools/list (game not needed)")
@@ -856,7 +916,7 @@ def t_live_skylink():
     rc, _, _ = run(["cmd.exe", "/c", launcher, "--check-install"], env=user_env())
     if rc != 0:
         raise Skip("not installed (optional: setup.cmd -SkyLink)")
-    tools = mcp_probe(launcher, 60)
+    tools = [t["name"] for t in mcp_probe(launcher, 60)]
     expect(len(tools) >= 50 and any(t.lower().replace("_", "") == "checkconnection" for t in tools), "tools: %s" % tools)
 
 

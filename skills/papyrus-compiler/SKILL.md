@@ -25,7 +25,7 @@ user's MO2 load order actually provides. Before writing any call into the script
 |---|---|
 | compile or syntax-check a `.psc` from a shell, any agent | `python scripts\papyrus\papyrusc.py compile ... -o <new mod>\Scripts` |
 | houseCARL is loaded and the CK compiler is configured in it | `housecarl_compile_script` (same MO2 import discovery, lands the `.pex` in a houseCARL patch mod) |
-| houseCARL is loaded but says the compiler is missing | `housecarl_set_tool_path` `papyrus_compiler` = `%SKYRIM_TOOLS_HOME%\papyrus-compiler\papyrus-compiler\Original Compiler\PapyrusCompiler.exe` (the CK compiler shipped in the papyrus-compiler archive) — it still needs the vanilla `.psc`, see below |
+| houseCARL is loaded but says the compiler is missing | `housecarl_set_tool_path` with `tool="papyrus_compiler"` and `path=` the full path to the CK `PapyrusCompiler.exe`. It still needs the vanilla `.psc`, see below. |
 | only want to know what the imports are | `python scripts\papyrus\papyrusc.py imports` |
 | which compilers exist here | `python scripts\papyrus\papyrusc.py which` (exit 3 = none: `setup.cmd` installs one) |
 

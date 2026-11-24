@@ -3,19 +3,26 @@ rem skyrim-gateway, the MCP facade over houseCARL, pyghidra-mcp and SkyLink AI (
 rem stdout is the MCP channel: nothing but the gateway may print to it.
 rem The exe, first found wins:
 rem   SKYRIM_GATEWAY_EXE                          explicit path
+rem   %SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe  installed release
 rem   %SKYRIM_TOOLS_REPO%\gateway\bin\skyrim-gateway.exe
 rem   <this repo>\gateway\bin\skyrim-gateway.exe
-rem   %SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe
 rem None found and Go on PATH: build it into <repo>\gateway\bin (once; the first build downloads Go modules).
 rem No Go either: fall back to houseCARL alone (scripts\run_housecarl.cmd), with a warning on stderr.
 setlocal
+if "%~1"=="--check-install" if not "%~2"=="" set "SKYRIM_TOOLS_HOME=%~2"
 if not defined SKYRIM_TOOLS_HOME set "SKYRIM_TOOLS_HOME=%LOCALAPPDATA%\SkyrimTools"
 for %%I in ("%~dp0..") do set "HERE=%%~fI"
+if not defined SKYRIM_TOOLS_REPO set "SKYRIM_TOOLS_REPO=%HERE%"
 set "GW="
 if defined SKYRIM_GATEWAY_EXE if exist "%SKYRIM_GATEWAY_EXE%" set "GW=%SKYRIM_GATEWAY_EXE%"
+if not defined GW if exist "%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe" set "GW=%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe"
 if not defined GW if defined SKYRIM_TOOLS_REPO if exist "%SKYRIM_TOOLS_REPO%\gateway\bin\skyrim-gateway.exe" set "GW=%SKYRIM_TOOLS_REPO%\gateway\bin\skyrim-gateway.exe"
 if not defined GW if exist "%HERE%\gateway\bin\skyrim-gateway.exe" set "GW=%HERE%\gateway\bin\skyrim-gateway.exe"
-if not defined GW if exist "%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe" set "GW=%SKYRIM_TOOLS_HOME%\gateway\skyrim-gateway.exe"
+if "%~1"=="--check-install" (
+    if not defined GW exit /b 1
+    echo("%GW%"
+    exit /b 0
+)
 if not defined GW call :build
 if not defined GW goto fallback
 "%GW%" %*
@@ -35,7 +42,7 @@ if exist "%SRC%\bin\skyrim-gateway.exe" set "GW=%SRC%\bin\skyrim-gateway.exe"
 exit /b 0
 
 :fallback
-echo skyrim-gateway: no skyrim-gateway.exe and no Go to build it (https://go.dev/dl/, then restart the client). 1>&2
+echo skyrim-gateway: no binary available. Run setup.cmd to install the release binary. 1>&2
 echo skyrim-gateway: falling back to houseCARL alone; Ghidra and SkyLink are unavailable in this session. 1>&2
 call "%~dp0run_housecarl.cmd" %*
 exit /b %errorlevel%

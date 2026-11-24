@@ -22,7 +22,7 @@ Run `setup.cmd` from the repository and select the folder containing `ModOrganiz
 
 Use `-Ghidra` and `-SkyLink` to include the optional components. To update, pull the repository and rerun setup with the options you use. See [the installation guide (Russian)](INSTALL.md).
 
-Claude Code uses the [MCP gateway](gateway/README.md). Install Go to let the launcher build it on first use. After updating the plugin, run `/plugin marketplace update skyrim-tools` and restart the session. For Codex, VS Code and other clients, see [MCP setup](docs/mcp-clients.md).
+Setup installs the prebuilt Windows x64 [MCP gateway](gateway/README.md) for Claude Code and verifies its SHA-256. After updating the plugin, run `/plugin marketplace update skyrim-tools` and restart the session. For Codex, VS Code and other clients, see [MCP setup](docs/mcp-clients.md).
 
 ## Check the installation
 
