@@ -20,7 +20,7 @@ The scripts and the ID name table are in SkyrimTools (git, `%SKYRIM_TOOLS_REPO%`
 | Path | What |
 |---|---|
 | `re\ghidra_12.2_PUBLIC\` | Ghidra 12.2 (official NSA build, SHA-256 checked) |
-| `re\jdk-25.0.5+8\` | Temurin JDK 25 (Ghidra 12.2 needs Java 25) |
+| `re\jdk-*\` | Temurin JDK 25 (Ghidra 12.2 needs Java 25). Setup records the selected folder in `jdk-current.txt`. |
 | `re\venv\` | Python 3.10-3.13 venv from `requirements-re.txt`: `pyghidra-mcp` 0.3.0, `pyghidra`, the MCP client SDK, `capstone`, `pefile` |
 | `re\gdt\` | optional, put there by hand (not by setup): Data Type Archives from **Skyrim RE Toolkit** (`CommonLibSSE_SE_b93280e.gdt`, AE, VR; auto-passed via `--gdt` when present) |
 | `re\BethesdaGhidraScripts\` | **BethesdaGhidraScripts** by doodlum (pipeline to generate import scripts from CommonLib / Address Library) |

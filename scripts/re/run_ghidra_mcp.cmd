@@ -17,7 +17,10 @@ if not exist "%RE%venv\Scripts\pyghidra-mcp.exe" if exist "%REPO_RE%\venv\Script
 )
 if not exist "%RE%venv\Scripts\pyghidra-mcp.exe" goto missing
 set "JAVA_HOME="
-for /d %%D in ("%RE%jdk-*") do set "JAVA_HOME=%%~fD"
+set "JDK_DIR="
+if exist "%RE%jdk-current.txt" set /p "JDK_DIR=" < "%RE%jdk-current.txt"
+if defined JDK_DIR if exist "%RE%%JDK_DIR%\bin\java.exe" set "JAVA_HOME=%RE%%JDK_DIR%"
+if not defined JAVA_HOME for /d %%D in ("%RE%jdk-*") do if exist "%%~fD\bin\java.exe" set "JAVA_HOME=%%~fD"
 set "GHIDRA_INSTALL_DIR="
 for /d %%D in ("%RE%ghidra_*_PUBLIC") do set "GHIDRA_INSTALL_DIR=%%~fD"
 if not defined JAVA_HOME goto missing

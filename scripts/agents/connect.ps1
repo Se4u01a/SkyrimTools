@@ -263,10 +263,10 @@ if (Test-Path -LiteralPath (Join-Path $re 'venv\Scripts\pyghidra-mcp.exe')) {
 } else {
     Write-Host "  pyghidra-mcp  not installed ($re) - optional, setup.cmd -Ghidra" -ForegroundColor Yellow
 }
-$slExe = [Environment]::GetEnvironmentVariable('SKYLINK_EXE', 'User')
-if (-not $slExe) { $slExe = Join-Path $home_ 'skylink\server\SkyrimMCP.exe' }
-if (Test-Path -LiteralPath $slExe) {
-    Write-Host "  skylink       ready: $slExe (tools answer only while the game runs)" -ForegroundColor Green
+$slOverride = [Environment]::GetEnvironmentVariable('SKYLINK_EXE', 'User')
+$slPath = & (Join-Path $Repo 'scripts\run_skylink.cmd') --check-install $home_ $slOverride
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "  skylink       ready: $slPath (tools answer only while the game runs)" -ForegroundColor Green
 } else {
     Write-Host '  skylink       not installed - optional, setup.cmd -SkyLink' -ForegroundColor Yellow
 }

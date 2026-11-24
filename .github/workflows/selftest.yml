@@ -15,10 +15,10 @@ jobs:
   selftest:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: RE venv packages the disassembly scripts import (pinned in requirements-re.txt)
         shell: pwsh
         run: |
@@ -33,8 +33,8 @@ jobs:
       run:
         working-directory: gateway
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: gateway/go.mod
           cache-dependency-path: gateway/go.sum

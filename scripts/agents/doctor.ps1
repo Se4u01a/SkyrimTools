@@ -232,15 +232,15 @@ elseif (Get-Command go -ErrorAction SilentlyContinue) { Add-Result 'skyrim-gatew
 else { Add-Result 'skyrim-gateway' 'WARN' 'no exe and no Go: the plugin falls back to houseCARL alone (no Ghidra, no SkyLink)' 'install Go (https://go.dev/dl/) or build gateway\bin\skyrim-gateway.exe elsewhere and set SKYRIM_GATEWAY_EXE' }
 
 # ---------------------------------------------------------------- SkyLink AI (optional, live game bridge)
-$skylinkExe = if ($env:SKYLINK_EXE) { $env:SKYLINK_EXE } else { Join-Path $home_ 'skylink\server\SkyrimMCP.exe' }
-if (Test-Path -LiteralPath $skylinkExe) {
+$skylinkPath = & (Join-Path $Repo 'scripts\run_skylink.cmd') --check-install $home_ (Get-SkyrimVar 'SKYLINK_EXE')
+if ($LASTEXITCODE -eq 0) {
     $skylinkMod = $null
     if ($mo2 -and (Test-Path -LiteralPath (Join-Path $mo2 'mods'))) {
         $skylinkMod = Get-ChildItem -LiteralPath (Join-Path $mo2 'mods') -Directory -ErrorAction SilentlyContinue |
                       Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKSE\Plugins\SkyrimMCPPlugin.dll') } | Select-Object -First 1
     }
-    if ($skylinkMod) { Add-Result 'SkyLink AI' 'OK' "server $skylinkExe; SKSE plugin in mod '$($skylinkMod.Name)' (enable it in MO2)" }
-    else { Add-Result 'SkyLink AI' 'WARN' "server $skylinkExe, but no MO2 mod carries SKSE\Plugins\SkyrimMCPPlugin.dll" 'setup.cmd -SkyLink creates the mod "SkyLink AI"; then enable it in MO2.' }
+    if ($skylinkMod) { Add-Result 'SkyLink AI' 'OK' "server $skylinkPath; SKSE plugin in mod '$($skylinkMod.Name)' (enable it in MO2)" }
+    else { Add-Result 'SkyLink AI' 'WARN' "server $skylinkPath, but no MO2 mod carries SKSE\Plugins\SkyrimMCPPlugin.dll" 'setup.cmd -SkyLink creates the mod "SkyLink AI"; then enable it in MO2.' }
 } else {
     Add-Result 'SkyLink AI' 'SKIP' 'not installed (optional: live game bridge)' 'setup.cmd -SkyLink'
 }

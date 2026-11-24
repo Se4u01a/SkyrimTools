@@ -44,7 +44,7 @@ SOFTWARE.
 |---|---|---|---|
 | houseCARL | https://github.com/Avick3110/houseCARL | see its release | release tag, SHA-256 from the release digest |
 | papyrus-compiler | https://github.com/russo-2025/papyrus-compiler | MIT | 2026.03.15, SHA-256 in `setup.ps1` |
-| SkyLink AI (`-SkyLink`) | https://github.com/jarvann/SkryimMCM | MIT | v1.0.0, SHA-256 in `setup.ps1` |
+| SkyLink AI (`-SkyLink`) | https://github.com/jarvann/SkryimMCM | MIT (MCP server and launcher), GPL-3.0-or-later (SKSE DLLs) | v1.5.0, SHA-256 in `setup.ps1` |
 | Ghidra, Temurin JDK, pyghidra-mcp (`-Ghidra`) | NSA Ghidra, Adoptium, PyPI | Apache-2.0 / GPLv2+CE / see PyPI | `setup.ps1` and `requirements-re.txt` |
 
 SkyLink AI's console-command code is itself adapted from ConsoleUtilSSE by VersuchDrei (MIT), as its README says.

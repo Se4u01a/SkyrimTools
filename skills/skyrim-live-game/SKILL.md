@@ -11,11 +11,11 @@ while the game is closed, at the main menu before a save is loaded, or during a 
 
 | | SkyLink AI | DevBench |
 |---|---|---|
-| Source | github.com/jarvann/SkryimMCM, MIT, release v1.0.0 | Nexus SE mod 181326 by alandtse, GPL-3.0 |
+| Source | github.com/jarvann/SkryimMCM, release v1.5.0, MCP server MIT and SKSE DLLs GPL-3.0-or-later | Nexus SE mod 181326 by alandtse, GPL-3.0 |
 | Install here | `setup.cmd -SkyLink`: server -> `%SKYRIM_TOOLS_HOME%\skylink\server`, SKSE plugin -> new MO2 mod `SkyLink AI` | the user installs it through MO2 like any mod; never copy its DLL yourself |
 | Transport | MCP stdio server `skylink` (`scripts\run_skylink.cmd`) -> named pipe `\\.\pipe\SkyrimMCP` -> plugin | MCP and REST on `http://127.0.0.1:8920` (next free port if busy; `/mcp` for MCP) |
-| Surface | 87 fixed tools (its README says 74): player, inventory, quests, NPCs, world, combat, economy, magic, events, Papyrus catalog + VM call, console fallback | console with output capture, inspect (state, VM, scene, mods, player, quests, effects, refs), Papyrus list/describe/call, menus, save/load, timed scenarios; other mods can register tools |
-| Runtime | built with CommonLibSSE-NG; the DLL exports `SKSEPlugin_Query` and `SKSEPlugin_Version`, so SKSE on 1.5.97 and on AE both accept it. Upstream documents only AE 1.6.1130+; **on 1.5.97 it is unverified** | SE, AE and VR per its Nexus page |
+| Surface | player, inventory, quests, NPCs, world, combat, economy, magic, events, Papyrus catalog + VM call, console. Use the server's `tools/list` for the current tool set. | console with output capture, inspect (state, VM, scene, mods, player, quests, effects, refs), Papyrus list/describe/call, menus, save/load, timed scenarios; other mods can register tools |
+| Runtime | upstream lists SE 1.5.97, Steam 1.6.1130–1.6.1170 and 1.7.104, and GOG 1.6.1179. Use the matching SKSE and Address Library. | SE, AE and VR per its Nexus page |
 
 Both need SKSE and Address Library. A missing bridge is reported, never worked around with screenshots,
 keystrokes or window focus: the user's desktop is theirs.
@@ -92,5 +92,5 @@ this conversation for that change, and the report names what was changed so the 
 - DevBench as an MCP server for a client that supports HTTP transport: `http://127.0.0.1:8920/mcp` (check the
   bound port in `Data\SKSE\Plugins\devbench\runtime.json` when 8920 was busy).
 
-Source: SkyLink AI tool surface from github.com/jarvann/SkryimMCM (MIT); DevBench facts from its Nexus page and
+Source: SkyLink AI MCP tool surface from github.com/jarvann/SkryimMCM; DevBench facts from its Nexus page and
 from skyrim-ai-assistant-toolkit (c) 2026 WingedGuardian, MIT License.

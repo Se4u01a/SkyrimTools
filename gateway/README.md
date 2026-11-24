@@ -1,16 +1,15 @@
 # skyrim-gateway
 
 The SkyrimTools MCP facade, **phase 0** of [docs/design/gateway.md](../docs/design/gateway.md): one MCP server that
-fronts houseCARL, pyghidra-mcp and SkyLink AI. The existing `.cmd` launchers and `.mcp.json` keep working; the gateway
-is opt-in until phase 1.
+fronts houseCARL, pyghidra-mcp and SkyLink AI. The Claude Code plugin starts the gateway from `.mcp.json`. Other MCP
+clients can use the backend `.cmd` launchers directly.
 
 ## What phase 0 does
 
 - **One entry for the client.** `skyrim-gateway.exe` (no arguments) is a stdio MCP server; it relays bytes to a per-user
   daemon over the named pipe `\\.\pipe\skyrim-gateway-<user>` (DACL: this user only), starting the daemon when none runs.
-- **One process per backend for every session.** Two agent sessions share one houseCARL, one Ghidra JVM, one SkyLink
-  pipe client. This matters: SkyLink's plugin serves one pipe client at a time, and a Ghidra project opens in one
-  process only.
+- **One shared process per backend.** Agent sessions share one houseCARL, one Ghidra JVM and one SkyLink pipe client.
+  A Ghidra project opens in one process at a time.
 - **The backends' own tool names** (`housecarl_records`, `decompile_function`, SkyLink's), because the skills cite
   them, plus `gateway_status` and `gateway_restart`; every description starts with `[backend]`. A name two backends
   share is exposed as `<backend>_<name>` for the second one. Prefixes (`Prefix`/`Strip` in a `--config` spec) and

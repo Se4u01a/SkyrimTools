@@ -20,7 +20,7 @@ can and fails with a readable message:
 |---|---|---|
 | `housecarl` | `<REPO>\scripts\run_housecarl.cmd` | `%HOUSECARL_EXE%` (default `%SKYRIM_TOOLS_HOME%\housecarl\server\housecarl-mcp.exe`) and .NET Runtime 10 x64 |
 | `pyghidra-mcp` | `<REPO>\scripts\re\run_ghidra_mcp.cmd` | `%SKYRIM_RE_DIR%` with `venv\Scripts\pyghidra-mcp.exe`, `jdk-*`, `ghidra_*_PUBLIC` (`setup.cmd -Ghidra`) |
-| `skylink` | `<REPO>\scripts\run_skylink.cmd` | optional: `%SKYLINK_EXE%` (default `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.exe`, `setup.cmd -SkyLink`); it starts without the game, but its tools answer only while Skyrim runs through SKSE with the `SkyLink AI` mod enabled |
+| `skylink` | `<REPO>\scripts\run_skylink.cmd` | optional: `setup.cmd -SkyLink` installs `SkyrimMCP.dll` for .NET 10. Set `SKYLINK_EXE` to override the server path. Live tools require Skyrim running through SKSE with the `SkyLink AI` mod enabled. |
 
 Start the wrapper in a terminal first when something is wrong — it prints the reason (missing exe, missing runtime,
 incomplete Ghidra workspace) and exits 1.

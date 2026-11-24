@@ -852,12 +852,11 @@ def t_live_gateway():
 
 @check("live MCP: SkyLink AI launcher answers initialize + tools/list (game not needed)")
 def t_live_skylink():
-    env = user_env()
-    home = env.get("SKYRIM_TOOLS_HOME") or os.path.join(env.get("LOCALAPPDATA", ""), "SkyrimTools")
-    exe = env.get("SKYLINK_EXE") or os.path.join(home, "skylink", "server", "SkyrimMCP.exe")
-    if not os.path.isfile(exe):
+    launcher = os.path.join(REPO, "scripts", "run_skylink.cmd")
+    rc, _, _ = run(["cmd.exe", "/c", launcher, "--check-install"], env=user_env())
+    if rc != 0:
         raise Skip("not installed (optional: setup.cmd -SkyLink)")
-    tools = mcp_probe(os.path.join(REPO, "scripts", "run_skylink.cmd"), 60)
+    tools = mcp_probe(launcher, 60)
     expect(len(tools) >= 50 and any(t.lower().replace("_", "") == "checkconnection" for t in tools), "tools: %s" % tools)
 
 

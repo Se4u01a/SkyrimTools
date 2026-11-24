@@ -73,7 +73,7 @@ Never edit an existing mod, `plugins.txt` or `ModOrganizer.ini` unless the user 
 | `SKYRIM_ADDRLIB_BIN` | Address Library `.bin` override (optional) | found under MO2 mods or game `Data` |
 | `PAPYRUS_COMPILER_DIR` | papyrus-compiler folder override (optional) | `%SKYRIM_TOOLS_HOME%\papyrus-compiler` (setup.cmd) |
 | `SKYRIM_DOCUMENTS_DIR` | the game folder under `Documents\My Games` (e.g. `...\Skyrim Special Edition`) for the log and save scripts (optional) | found per game folder, SE first |
-| `SKYLINK_EXE` | SkyLink AI server exe override (optional) | `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.exe` |
+| `SKYLINK_EXE` | SkyLink AI server executable or .NET DLL override (optional) | `%SKYRIM_TOOLS_HOME%\skylink\server\SkyrimMCP.dll` |
 
 Syntax by shell: cmd `%VAR%`, PowerShell `$env:VAR`, Git Bash `$VAR`. **An unset variable means that part is not
 installed** — say so and ask for the path; do not guess a `D:\...` path from an example in the docs.
@@ -89,7 +89,7 @@ same names, plus `gateway_status` / `gateway_restart`; other clients wire the th
 |---|---|---|---|
 | `housecarl` | `scripts\run_housecarl.cmd` | `%HOUSECARL_EXE%` exists (needs .NET Runtime 10 x64) | the live MO2 load order: record reads/writes, conflicts, patches, Papyrus (de)compile, BSA, NIF, SKSE layer, Nexus |
 | `pyghidra-mcp` | `scripts\re\run_ghidra_mcp.cmd` | `%SKYRIM_RE_DIR%\venv`, `jdk-*`, `ghidra_*_PUBLIC` exist | headless Ghidra: decompile, disassemble, xrefs (auto-attaches CommonLibSSE GDT archives) |
-| `skylink` | `scripts\run_skylink.cmd` | optional: `%SKYLINK_EXE%` exists (`setup.cmd -SkyLink`); it starts without the game, but its tools answer only while Skyrim runs through SKSE with the `SkyLink AI` mod enabled | the running game: player, inventory, quests, NPCs, Papyrus calls, console; read freely, change only on the user's explicit request |
+| `skylink` | `scripts\run_skylink.cmd` | optional: SkyLink server installed (`setup.cmd -SkyLink`), .NET 10, and the `SkyLink AI` mod enabled in MO2 for live tools | the running game: player, inventory, quests, NPCs, Papyrus calls, console; read freely, change only on the user's explicit request |
 
 houseCARL tool names are `housecarl_<tool>` on every host — `housecarl_records`, `housecarl_asset_status`,
 `housecarl_apply`, `housecarl_create`, `housecarl_forward`, `housecarl_check`, `housecarl_compile_script`,
